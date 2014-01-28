@@ -73,3 +73,9 @@ void twi_slave_init( void )
     TWCR = ( 1 << TWEA ) | ( 1 << TWEN ) | ( 1 << TWIE );
 }
 
+
+void twi_slave_stop( void )
+{
+    TWCR = 0;
+}
+

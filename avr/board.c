@@ -7,21 +7,20 @@
 #include "board.h"
 
 
-extern void button_press( void );
-extern void countdown_complete( void );
+extern void power_event( uint8_t reason );
 
 volatile uint16_t system_ticks;
-volatile uint8_t countdown_hours, countdown_minutes, countdown_seconds;
+volatile uint32_t countdown_seconds;
+volatile uint32_t uptime;
 
 
 uint8_t board_begin_countdown( void )
 {
-    countdown_hours   = registers_get( REG_RESTART_HOURS );
-    countdown_minutes = registers_get( REG_RESTART_MINUTES );
-    countdown_seconds = registers_get( REG_RESTART_SECONDS );
+    countdown_seconds = registers_get( REG_RESTART_HOURS ) * 3600;
+    countdown_seconds += registers_get( REG_RESTART_MINUTES ) * 60;
+    countdown_seconds += registers_get( REG_RESTART_SECONDS );
     
-    if ( ( countdown_hours == 0 ) && ( countdown_minutes == 0 ) &&
-         ( countdown_seconds == 0 ) )
+    if ( countdown_seconds == 0 )
     {
         return 0;
     }
@@ -59,50 +58,52 @@ void board_gpio_config( void )
     // ones from floating
     DDRB = 0;
     PORTB = 0xFF;               // engage all PORTB pull-ups
+    DDRC = 0;
+    PORTC = ~( PIN_SDA | PIN_SCL );
 
-    DDRD = PIN_ENABLE;          // INT0 is system power enable
+    DDRD = PIN_ENABLE;          // system power enable
     PORTD = ~( PIN_ENABLE | PIN_3V3 );      // INT1 detects BB system voltage         
     
     // Pin change interrupt0
-    PCMSK0 = ( 1 << PCINT0 );   // PCINT0 = PB0 (button)
-    PCMSK2 = ( 1 << PCINT23 );  // OPTO = PD7 = PCINT23
-    PCICR  = ( ( 1 << PCIE0 ) | ( 1 << PCIE2 ) );
+    PCMSK1 = ( PIN_PGOOD );   // REB: TODO
+    PCMSK2 = ( PIN_OPTO | PIN_BUTTON );  
+    PCICR  = ( ( 1 << PCIE2 ) | ( 1 << PCIE1 ) );
 }
 
 
-// Button press
-ISR( PCINT0_vect )
+// Power Good
+ISR( PCINT1_vect )
 {
-    button_press();
+    if ( ( PINC & PIN_PGOOD ) == 0 )
+    {
+        power_event( START_PWRGOOD );
+    }
 }
 
 
-// OPTO
+// OPTO and Button
 ISR( PCINT2_vect )
 {
-    button_press();
+    if ( ( PIND & PIN_BUTTON ) == 0 )
+    {
+        power_event( START_BUTTON );
+    }
+
+    if ( ( PIND & PIN_OPTO ) == 0 )
+    {
+        power_event( START_EXTERNAL );
+    }
 }
 
 
 ISR( TIMER2_OVF_vect )
 {
-    if ( countdown_seconds > 0 )
+    uptime++;
+    countdown_seconds--;
+
+    if ( countdown_seconds == 0 )
     {
-        countdown_seconds--;
-    }
-    else if ( countdown_minutes > 0 )
-    {
-        countdown_minutes--;
-        countdown_seconds = 59;
-    }
-    else if ( countdown_hours > 0 )
-    {
-        countdown_hours--;
-        countdown_minutes = 59;
-    }
-    else
-    {
-        countdown_complete();
+        power_event( START_TIMEOUT );
     }
 }
 

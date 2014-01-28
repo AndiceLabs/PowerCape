@@ -33,20 +33,15 @@ enum state_type {
 volatile uint8_t power_state = STATE_INIT;
 
 
-void countdown_complete( void )
-{
-    if ( power_state == STATE_COUNTDOWN )
-    {
-        power_state = STATE_POWER_ON;
-    }
-}
-
-
-void button_press( void )
+void power_event( uint8_t reason )
 {
     if ( ( power_state == STATE_OFF ) || ( power_state == STATE_COUNTDOWN ) )
     {
-        power_state = STATE_POWER_ON;
+        if ( registers_get( REG_START_ENABLE ) & reason )
+        {
+            power_state = STATE_POWER_ON;
+            registers_set_mask( REG_START_REASON, reason );
+        }
     }
 }
 
@@ -58,6 +53,9 @@ void state_machine( void )
         default:
         case STATE_INIT:
         {
+            board_power_off();
+            registers_clear_mask( REG_START_REASON, 0xFF );
+
             if ( board_begin_countdown() == 0 )
             {
                 power_state = STATE_OFF;
@@ -82,6 +80,7 @@ void state_machine( void )
             if ( board_3v3() != 0 )
             {
                 power_state = STATE_ON;
+                twi_slave_init();
             }
             break;
         }
@@ -91,7 +90,7 @@ void state_machine( void )
             // Check for countdown value
             if ( board_3v3() == 0 )
             {
-                board_power_off();
+                twi_slave_stop();
                 power_state = STATE_INIT;
             }
             break;
@@ -105,13 +104,12 @@ int main( void )
     // Platform setup
     board_init();
     registers_init();
-    twi_slave_init();
     
     set_sleep_mode( SLEEP_MODE_PWR_SAVE );
     sei();
-    
+
     // Main loop
-    while ( 1 ) 
+    while ( 1 )
     {
         state_machine();
         if ( power_state != STATE_ON )

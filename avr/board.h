@@ -2,7 +2,7 @@
 #define __BOARD_H__
 
 // Port B
-#define PIN_BUTTON      ( 1 << PB0 )        // PCINT0
+#define PIN_PB0         ( 1 << PB0 )        // PCINT0
 #define PIN_PB1         ( 1 << PB1 )        // PCINT1
 #define PIN_PB2         ( 1 << PB2 )        // PCINT2
 #define PIN_PB3         ( 1 << PB3 )        // PCINT3
@@ -14,7 +14,7 @@
 // Port C
 #define PIN_PC0         ( 1 << PC0 )        // NC on P1 board
 #define PIN_PC1         ( 1 << PC1 )        // NC on P0 board
-#define PIN_ADC2        ( 1 << PC2 )        // NC
+#define PIN_PGOOD       ( 1 << PC2 )        // PCINT10
 #define PIN_ADC3        ( 1 << PC3 )        // NC
 #define PIN_SDA         ( 1 << PC4 )        // I2C
 #define PIN_SCL         ( 1 << PC5 )        // I2C
@@ -24,8 +24,8 @@
 #define PIN_TXD         ( 1 << PD1 )        // PCINT17
 #define PIN_ENABLE      ( 1 << PD2 )        // PCINT18
 #define PIN_3V3         ( 1 << PD3 )        // PCINT19
-#define PIN_OUT3        ( 1 << PD4 )        // PCINT20
-#define PIN_PD5         ( 1 << PD5 )        // PCINT21
+#define PIN_PD4         ( 1 << PD4 )        // PCINT20
+#define PIN_BUTTON      ( 1 << PD5 )        // PCINT21
 #define PIN_PD6         ( 1 << PD6 )        // PCINT22
 #define PIN_OPTO        ( 1 << PD7 )        // PCINT23
 

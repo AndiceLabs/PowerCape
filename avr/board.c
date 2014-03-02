@@ -30,25 +30,27 @@ uint8_t board_begin_countdown( void )
 
 void board_power_on( void )
 {
-    PORTD |= PIN_ENABLE;
+    PORTD |= PIN_D;
+    asm volatile( "nop\n\t" );
+    PORTD |= PIN_CP;
+    asm volatile( "nop\n\t" );
+    PORTD &= ~PIN_CP;
 }
 
 
 void board_power_off( void )
 {
-    PORTD &= ~PIN_ENABLE;
-}
-
-
-uint8_t board_powered( void )
-{
-    return ( PORTD & PIN_ENABLE ) ? 1 : 0;
+    PORTD &= ~PIN_D;
+    asm volatile( "nop\n\t" );
+    PORTD |= PIN_CP;
+    asm volatile( "nop\n\t" );
+    PORTD &= ~PIN_CP;
 }
 
 
 uint8_t board_3v3( void )
 {
-    return ( PIND & PIN_3V3 ) ? 1 : 0;
+    return ( PIND & PIN_DETECT ) ? 1 : 0;
 }
 
 
@@ -56,18 +58,30 @@ void board_gpio_config( void )
 {
     // Enable pull-ups on input pins to keep unconnected 
     // ones from floating
-    DDRB = 0;
-    PORTB = 0xFF;               // engage all PORTB pull-ups
-    DDRC = 0;
-    PORTC = ~( PIN_SDA | PIN_SCL );
+    PORTB = ~( PIN_LED2 | PIN_LED1 );               // engage all PORTB pull-ups
+    DDRB = ( PIN_LED2 | PIN_LED1 );
 
-    DDRD = PIN_ENABLE;          // system power enable
-    PORTD = ~( PIN_ENABLE | PIN_3V3 );      // INT1 detects BB system voltage         
+    PORTC = ~( PIN_SDA | PIN_SCL | PIN_CE );
+    DDRC = 0;
+
+    PORTD = ~( PIN_CP | PIN_D | PIN_DETECT | PIN_TXD | PIN_RXD );
+    DDRD = ( PIN_CP | PIN_D );
     
     // Pin change interrupt0
-    PCMSK1 = ( PIN_PGOOD );   // REB: TODO
-    PCMSK2 = ( PIN_OPTO | PIN_BUTTON );  
-    PCICR  = ( ( 1 << PCIE2 ) | ( 1 << PCIE1 ) );
+    PCMSK0 = ( PIN_OPTO );
+    PCMSK1 = ( PIN_PGOOD ); 
+    PCMSK2 = ( PIN_BUTTON );  
+    PCICR  = ( 1 << PCIE2 ) | ( 1 << PCIE1 ) | ( 1 << PCIE0 );
+}
+
+
+// OPTO
+ISR( PCINT0_vect )
+{
+    if ( ( PINB & PIN_OPTO ) == 0 )
+    {
+        power_event( START_EXTERNAL );
+    }
 }
 
 
@@ -81,17 +95,12 @@ ISR( PCINT1_vect )
 }
 
 
-// OPTO and Button
+// Button
 ISR( PCINT2_vect )
 {
     if ( ( PIND & PIN_BUTTON ) == 0 )
     {
         power_event( START_BUTTON );
-    }
-
-    if ( ( PIND & PIN_OPTO ) == 0 )
-    {
-        power_event( START_EXTERNAL );
     }
 }
 

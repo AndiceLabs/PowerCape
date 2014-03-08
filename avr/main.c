@@ -53,16 +53,22 @@ void state_machine( void )
         default:
         case STATE_INIT:
         {
-            board_power_off();
             registers_clear_mask( REG_START_REASON, 0xFF );
 
-            if ( board_begin_countdown() == 0 )
+            if ( board_3v3() )
             {
-                power_state = STATE_OFF;
+                power_state = STATE_POWER_ON;
             }
             else
             {
-                power_state = STATE_COUNTDOWN;
+                if ( board_begin_countdown() == 0 )
+                {
+                    power_state = STATE_OFF;
+                }
+                else
+                {
+                    power_state = STATE_COUNTDOWN;
+                }
             }
             break;
         }
@@ -91,6 +97,7 @@ void state_machine( void )
             if ( board_3v3() == 0 )
             {
                 twi_slave_stop();
+                board_power_off();
                 power_state = STATE_INIT;
             }
             break;

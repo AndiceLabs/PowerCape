@@ -35,6 +35,7 @@ void board_power_on( void )
     PORTD |= PIN_CP;
     asm volatile( "nop\n\t" );
     PORTD &= ~PIN_CP;
+    PORTD &= ~PIN_D;
 }
 
 
@@ -48,9 +49,48 @@ void board_power_off( void )
 }
 
 
+void board_led_on( uint8_t led )
+{
+    if ( led == 0 )
+    {
+        PORTB |= PIN_LED0;
+    }
+    else
+    {
+        PORTB |= PIN_LED1;
+    }
+}
+
+
+void board_led_off( uint8_t led )
+{
+    if ( led == 0 )
+    {
+        PORTB &= ~PIN_LED0;
+    }
+    else
+    {
+        PORTB &= ~PIN_LED1;
+    }
+}
+
+
+void board_ce( uint8_t enable )
+{
+    if ( enable )
+    {
+        DDRC &= ~PIN_CE;
+    }
+    else
+    {
+        DDRC |= PIN_CE;
+    }
+}
+
+
 uint8_t board_3v3( void )
 {
-    return ( PIND & PIN_DETECT ) ? 1 : 0;
+    return ( PIND & PIN_DETECT );
 }
 
 
@@ -58,8 +98,8 @@ void board_gpio_config( void )
 {
     // Enable pull-ups on input pins to keep unconnected 
     // ones from floating
-    PORTB = ~( PIN_LED2 | PIN_LED1 );               // engage all PORTB pull-ups
-    DDRB = ( PIN_LED2 | PIN_LED1 );
+    PORTB = ~( PIN_LED1 | PIN_LED0 | PIN_XTAL1 | PIN_XTAL2 );   // engage all PORTB pull-ups
+    DDRB = ( PIN_LED1 | PIN_LED0 );
 
     PORTC = ~( PIN_SDA | PIN_SCL | PIN_CE );
     DDRC = 0;
@@ -133,7 +173,6 @@ void board_init( void )
 {
     board_gpio_config();
     PRR |= ( ( 1 << PRTIM0 ) | ( 1 << PRTIM1 ) );
-
     timer2_init();    
     PRR |= ( ( 1 << PRSPI ) | ( 1 << PRUSART0 ) | ( 1 << PRADC ) );
 }

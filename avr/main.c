@@ -26,7 +26,7 @@ enum state_type {
     STATE_INIT,
     STATE_CLEAR_MASK,
     STATE_OFF,
-    STATE_COUNTDOWN,
+    STATE_OFF_PGOOD,
     STATE_POWER_ON,
     STATE_POWER_OFF,
     STATE_ON,
@@ -35,9 +35,18 @@ enum state_type {
 volatile uint8_t power_state = STATE_INIT;
 
 
+void power_down( void )
+{
+    if ( power_state == STATE_ON )
+    {
+        power_state = STATE_POWER_OFF;
+    }
+}
+
+
 void power_event( uint8_t reason )
 {
-    if ( ( power_state == STATE_OFF ) || ( power_state == STATE_COUNTDOWN ) )
+    if ( ( power_state == STATE_OFF ) || ( power_state == STATE_OFF_PGOOD ) )
     {
         if ( registers_get( REG_START_ENABLE ) & reason )
         {
@@ -68,24 +77,41 @@ void state_machine( void )
         
         case STATE_CLEAR_MASK:
         {
-            registers_clear_mask( REG_START_REASON, 0xFF );
+            uint8_t reg = registers_get( REG_START_ENABLE ); 
             
-            if ( board_begin_countdown() == 0 )
+            board_enable_interrupt( reg );
+            board_begin_countdown();
+            
+            if ( board_pgood() )
             {
-                power_state = STATE_OFF;
+                power_state = STATE_OFF_PGOOD;
             }
             else
             {
-                power_state = STATE_COUNTDOWN;
+                power_state = STATE_OFF;
             }
             
+            registers_clear_mask( REG_START_REASON, 0xFF );
+
             break;
         }
         
         case STATE_OFF:
-        case STATE_COUNTDOWN:
         {
-            // Enable external events
+            if ( board_pgood() )
+            {
+                power_state = STATE_OFF_PGOOD;
+                power_event( START_PWRGOOD );
+            }
+            break;
+        }
+        
+        case STATE_OFF_PGOOD:
+        {
+            if ( !board_pgood() )
+            {
+                power_state = STATE_OFF;
+            }
             break;
         }
         
@@ -96,6 +122,7 @@ void state_machine( void )
             {
                 power_state = STATE_ON;
                 twi_slave_init();
+                board_disable_interrupt( START_ALL );
             }
             break;
         }

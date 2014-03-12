@@ -60,8 +60,11 @@ void board_led_off( uint8_t led );
 
 void board_ce( uint8_t enable );
 
-uint8_t board_powered( void );
 uint8_t board_3v3( void );
+uint8_t board_pgood( void );
+
+void board_enable_interrupt( uint8_t mask );
+void board_disable_interrupt( uint8_t mask );
 
 void board_gpio_config( void );
 void board_init( void );

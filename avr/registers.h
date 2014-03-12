@@ -32,6 +32,7 @@ enum registers_type {
 #define START_EXTERNAL          0x02
 #define START_PWRGOOD           0x04
 #define START_TIMEOUT           0x08
+#define START_ALL               0x0F
 
 
 void registers_init( void );

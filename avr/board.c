@@ -7,21 +7,23 @@
 #include "board.h"
 
 
+extern void power_down( void );
 extern void power_event( uint8_t reason );
 
 volatile uint16_t system_ticks;
-volatile uint32_t countdown_seconds;
-volatile uint32_t uptime;
+volatile uint32_t countdown;
+volatile uint32_t seconds;
 
 
 uint8_t board_begin_countdown( void )
 {
-    countdown_seconds = registers_get( REG_RESTART_HOURS ) * 3600;
-    countdown_seconds += registers_get( REG_RESTART_MINUTES ) * 60;
-    countdown_seconds += registers_get( REG_RESTART_SECONDS );
+    countdown = registers_get( REG_RESTART_HOURS ) * 3600;
+    countdown += registers_get( REG_RESTART_MINUTES ) * 60;
+    countdown += registers_get( REG_RESTART_SECONDS );
     
-    if ( countdown_seconds == 0 )
+    if ( countdown == 0 )
     {
+        registers_clear_mask( REG_START_ENABLE, START_TIMEOUT );
         return 0;
     }
     return 1;
@@ -94,6 +96,44 @@ uint8_t board_3v3( void )
 }
 
 
+uint8_t board_pgood( void )
+{
+    return ( ( PINC & PIN_PGOOD ) ? 0 : 1 );
+}
+
+
+void board_enable_interrupt( uint8_t mask )
+{
+    if ( mask & START_EXTERNAL )
+    {
+        PCMSK0 |= ( PIN_OPTO );
+        PCICR  |= ( 1 << PCIE0 );
+    }
+
+    if ( mask & START_BUTTON )
+    {
+        PCMSK2 |= ( PIN_BUTTON );
+        PCICR  |= ( 1 << PCIE2 );
+    }
+}
+
+
+void board_disable_interrupt( uint8_t mask )
+{
+    if ( mask & START_EXTERNAL )
+    {
+        PCMSK0 &= ~( PIN_OPTO );
+        PCICR  &= ~( 1 << PCIE0 );
+    }
+
+    if ( mask & START_BUTTON )
+    {
+        PCMSK2 &= ~( PIN_BUTTON );
+        PCICR  &= ~( 1 << PCIE2 );
+    }
+}
+
+
 void board_gpio_config( void )
 {
     // Enable pull-ups on input pins to keep unconnected 
@@ -106,18 +146,14 @@ void board_gpio_config( void )
 
     PORTD = ~( PIN_CP | PIN_D | PIN_DETECT | PIN_TXD | PIN_RXD );
     DDRD = ( PIN_CP | PIN_D );
-    
-    // Pin change interrupt0
-    PCMSK0 = ( PIN_OPTO );
-    PCMSK1 = ( PIN_PGOOD ); 
-    PCMSK2 = ( PIN_BUTTON );  
-    PCICR  = ( 1 << PCIE2 ) | ( 1 << PCIE1 ) | ( 1 << PCIE0 );
 }
 
 
 // OPTO
-ISR( PCINT0_vect )
+ISR( PCINT0_vect, ISR_BLOCK )
 {
+    PCMSK0 &= ~PIN_OPTO;
+
     if ( ( PINB & PIN_OPTO ) == 0 )
     {
         power_event( START_EXTERNAL );
@@ -126,18 +162,24 @@ ISR( PCINT0_vect )
 
 
 // Power Good
-ISR( PCINT1_vect )
+#if 0
+ISR( PCINT1_vect, ISR_BLOCK )
 {
+    PCMSK1 &= ~PIN_PGOOD; 
+
     if ( ( PINC & PIN_PGOOD ) == 0 )
     {
         power_event( START_PWRGOOD );
     }
 }
+#endif
 
 
 // Button
-ISR( PCINT2_vect )
+ISR( PCINT2_vect, ISR_BLOCK )
 {
+    PCMSK2 &= ~PIN_BUTTON;
+
     if ( ( PIND & PIN_BUTTON ) == 0 )
     {
         power_event( START_BUTTON );
@@ -145,14 +187,36 @@ ISR( PCINT2_vect )
 }
 
 
-ISR( TIMER2_OVF_vect )
+ISR( TIMER2_OVF_vect, ISR_BLOCK )
 {
-    uptime++;
-    countdown_seconds--;
+    static uint8_t button_hold_count = 0;
 
-    if ( countdown_seconds == 0 )
+#ifdef DEBUG
+    PORTB ^= PIN_LED0;
+#endif
+    
+    // Handle RTC
+    seconds++;
+    
+    // Check for startup conditions
+    countdown--;
+    if ( countdown == 0 )
     {
         power_event( START_TIMEOUT );
+    }
+    
+    // Forced power-off check
+    if ( ( PIND & PIN_BUTTON ) == 0 )
+    {
+        button_hold_count++;
+        if ( button_hold_count == 5 )
+        {
+            power_down();
+        }
+    }
+    else
+    {
+        button_hold_count = 0;
     }
 }
 

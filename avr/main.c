@@ -18,7 +18,7 @@ void get_mcusr( void )
 {
     mcusr = MCUSR;
     MCUSR = 0;
-    wdt_disable();
+    wdt_enable( WDTO_2S );
 }
 
 
@@ -168,6 +168,7 @@ int main( void )
             sleep_cpu();
             sleep_disable();
         }
+        wdt_reset();
     }
 }
 

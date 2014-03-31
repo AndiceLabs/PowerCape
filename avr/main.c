@@ -11,6 +11,8 @@
 #include "registers.h"
 #include "twi_slave.h"
 
+extern volatile uint16_t system_ticks;
+
 uint8_t mcusr __attribute__ ((section (".noinit")));
 
 void get_mcusr(void) __attribute__((naked)) __attribute__((section(".init3")));
@@ -18,39 +20,42 @@ void get_mcusr( void )
 {
     mcusr = MCUSR;
     MCUSR = 0;
-    wdt_enable( WDTO_2S );
+    wdt_enable( WDTO_1S );
 }
 
 
 enum state_type {
     STATE_INIT,
     STATE_CLEAR_MASK,
-    STATE_OFF,
-    STATE_OFF_PGOOD,
-    STATE_POWER_ON,
-    STATE_POWER_OFF,
+    STATE_OFF_NO_PGOOD,
+    STATE_OFF_WITH_PGOOD,
+    STATE_POWER_UP,
+    STATE_CHECK_3V,
     STATE_ON,
+    STATE_POWER_DOWN,
 };
 
 volatile uint8_t power_state = STATE_INIT;
+uint8_t retries = 0;
 
 
 void power_down( void )
 {
     if ( power_state == STATE_ON )
     {
-        power_state = STATE_POWER_OFF;
+        power_state = STATE_POWER_DOWN;
     }
 }
 
 
 void power_event( uint8_t reason )
 {
-    if ( ( power_state == STATE_OFF ) || ( power_state == STATE_OFF_PGOOD ) )
+    if ( ( power_state == STATE_OFF_NO_PGOOD ) || ( power_state == STATE_OFF_WITH_PGOOD ) )
     {
         if ( registers_get( REG_START_ENABLE ) & reason )
         {
-            power_state = STATE_POWER_ON;
+            retries = 3;
+            power_state = STATE_POWER_UP;
             registers_set_mask( REG_START_REASON, reason );
         }
     }
@@ -66,11 +71,12 @@ void state_machine( void )
         {
             if ( board_3v3() )
             {
-                power_state = STATE_POWER_ON;
+                retries = 3;
+                power_state = STATE_POWER_UP;
             }
             else
             {
-                power_state = STATE_POWER_OFF;
+                power_state = STATE_POWER_DOWN;
             }
             break;
         }
@@ -84,11 +90,11 @@ void state_machine( void )
             
             if ( board_pgood() )
             {
-                power_state = STATE_OFF_PGOOD;
+                power_state = STATE_OFF_WITH_PGOOD;
             }
             else
             {
-                power_state = STATE_OFF;
+                power_state = STATE_OFF_NO_PGOOD;
             }
             
             registers_clear_mask( REG_START_REASON, 0xFF );
@@ -96,48 +102,78 @@ void state_machine( void )
             break;
         }
         
-        case STATE_OFF:
+        case STATE_OFF_NO_PGOOD:
         {
             if ( board_pgood() )
             {
-                power_state = STATE_OFF_PGOOD;
+                power_state = STATE_OFF_WITH_PGOOD;
                 power_event( START_PWRGOOD );
+            }
+            else
+            {
+                sleep_enable();
+                sleep_cpu();
+                sleep_disable();
             }
             break;
         }
         
-        case STATE_OFF_PGOOD:
+        case STATE_OFF_WITH_PGOOD:
         {
             if ( !board_pgood() )
             {
-                power_state = STATE_OFF;
+                power_state = STATE_OFF_NO_PGOOD;
+            }
+            else
+            {
+                sleep_enable();
+                sleep_cpu();
+                sleep_disable();
             }
             break;
         }
         
-        case STATE_POWER_ON:
+        case STATE_POWER_UP:
         {
+            retries--;
             board_power_on();
-            if ( board_3v3() != 0 )
+            power_state = STATE_CHECK_3V;            
+            break;
+        }
+        
+        case STATE_CHECK_3V:
+        {
+            if ( board_3v3() )
             {
                 power_state = STATE_ON;
                 twi_slave_init();
                 board_disable_interrupt( START_ALL );
+            }
+            else
+            {
+                board_power_off();
+                if ( retries > 0 )
+                {
+                    power_state = STATE_POWER_UP;
+                }
+                else
+                {
+                    power_state = STATE_POWER_DOWN;
+                }
             }
             break;
         }
         
         case STATE_ON:
         {
-            // Check for countdown value
             if ( board_3v3() == 0 )
             {
-                power_state = STATE_POWER_OFF;
+                power_state = STATE_POWER_DOWN;
             }
             break;
         }
         
-        case STATE_POWER_OFF:
+        case STATE_POWER_DOWN:
         {
             twi_slave_stop();
             board_power_off();
@@ -150,10 +186,13 @@ void state_machine( void )
 
 int main( void )
 {
+    uint16_t last_tick = 0;
+    
     // Platform setup
     board_init();
     registers_init();
     registers_set( REG_MCUSR, mcusr );
+    registers_set( REG_OSCCAL, OSCCAL );
     
     set_sleep_mode( SLEEP_MODE_PWR_SAVE );
     sei();
@@ -161,13 +200,12 @@ int main( void )
     // Main loop
     while ( 1 )
     {
-        state_machine();
-        if ( power_state != STATE_ON )
+        if ( last_tick != system_ticks )
         {
-            sleep_enable();
-            sleep_cpu();
-            sleep_disable();
+            last_tick = system_ticks;
+            state_machine();
         }
+
         wdt_reset();
     }
 }

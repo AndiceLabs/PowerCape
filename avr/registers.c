@@ -76,6 +76,11 @@ void registers_host_write( uint8_t index, uint8_t data )
     
     switch ( index )
     {
+        case REG_OSCCAL:
+        {
+            OSCCAL = data;
+            break;
+        }
         case REG_CONTROL:
         {
             if ( data & CONTROL_CE )

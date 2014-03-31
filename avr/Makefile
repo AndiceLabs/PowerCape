@@ -22,6 +22,7 @@ ISP_FLAGS      = -p m328p -c avrisp2
 all: $(PRG).elf lst text eeprom
 
 program: $(PRG).hex
+	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -U hfuse:w:0xC9:m -U lfuse:w:0x62:m -U efuse:w:0x05:m
 	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -e -U flash:w:$(PRG).hex:i
 
 fuses:

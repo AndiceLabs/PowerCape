@@ -104,7 +104,19 @@ uint8_t board_3v3( void )
 
 uint8_t board_pgood( void )
 {
-    return ( ( PINC & PIN_PGOOD ) ? 0 : 1 );
+    uint8_t rc = 0;
+    
+    if ( PINC & PIN_PGOOD )
+    {
+        registers_clear_mask( REG_STATUS, STATUS_POWER_GOOD );
+    }
+    else
+    {
+        registers_set_mask( REG_STATUS, STATUS_POWER_GOOD );
+        rc = 1;
+    }
+    
+    return rc;
 }
 
 

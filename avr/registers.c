@@ -9,25 +9,25 @@ extern volatile uint32_t seconds;
 static uint8_t registers[ NUM_REGISTERS ];
 
 // Internal interface
-void registers_set_mask( uint8_t index, uint8_t mask )
+inline void registers_set_mask( uint8_t index, uint8_t mask )
 {
     registers[ index ] |= mask;
 }
 
 
-void registers_clear_mask( uint8_t index, uint8_t mask )
+inline void registers_clear_mask( uint8_t index, uint8_t mask )
 {
     registers[ index ] &= ~mask;
 }
 
 
-uint8_t registers_get( uint8_t index )
+inline uint8_t registers_get( uint8_t index )
 {
     return registers[ index ];
 }
 
 
-void registers_set( uint8_t index, uint8_t value )
+inline void registers_set( uint8_t index, uint8_t value )
 {
     registers[ index ] = value;
 }
@@ -38,6 +38,12 @@ uint8_t registers_host_read( uint8_t index )
 {
     switch ( index )
     {
+        case REG_STATUS:
+        {
+            // Update pgood status
+            board_pgood();
+            break;
+        }
         case REG_SECONDS_0:
         {
             registers[ REG_SECONDS_0 ] = ( uint8_t )( seconds & 0xFF );

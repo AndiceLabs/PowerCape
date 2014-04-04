@@ -2,7 +2,7 @@ PRG            = powercape
 PLATFORM       = powercape
 TARGET         = atmega328p
 CPUCLK         = 1000000
-OBJ            = main.o board.o twi_slave.o registers.o
+OBJ            = main.o board.o twi_slave.o registers.o eeprom.o
 OPTIMIZE       = -Os
 DEFS           = -I. -D$(PLATFORM) -DF_CPU=$(CPUCLK)
 #DEFS           += -DDEBUG
@@ -20,10 +20,9 @@ ISP_PROG       = avrdude
 ISP_PORT       = usb
 ISP_FLAGS      = -p m328p -c avrisp2
 
-all: $(PRG).elf lst text eeprom
+all: $(PRG).elf lst text
 
 program: $(PRG).hex
-	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -U hfuse:w:0xC9:m -U lfuse:w:0x62:m -U efuse:w:0x05:m
 	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -e -U flash:w:$(PRG).hex:i
 
 fuses:
@@ -31,7 +30,7 @@ fuses:
 #	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -U hfuse:w:0xD9:m -U lfuse:w:0xF7:m
 # Part defaults (Internal RC osc at 1MHz)
 #	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -U hfuse:w:0xD9:m -U lfuse:w:0x62:m 
-	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -U hfuse:w:0xC9:m -U lfuse:w:0x62:m -U efuse:w:0x05:m
+	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -U hfuse:w:0xD1:m -U lfuse:w:0x62:m -U efuse:w:0x05:m
 # Internal RC osc at 8MHz
 #	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -U hfuse:w:0xDF:m -U lfuse:w:0xE2:m
 

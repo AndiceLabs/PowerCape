@@ -27,6 +27,7 @@ enum registers_type {
 #define CONTROL_CE              0x01
 #define CONTROL_LED0            0x02
 #define CONTROL_LED1            0x04
+#define CONTROL_BOOTLOAD        0x80
 
 // START enable and reason register bits
 #define START_BUTTON            0x01

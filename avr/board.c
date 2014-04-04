@@ -210,33 +210,30 @@ ISR( TIMER2_OVF_vect, ISR_BLOCK )
     
     // Handle RTC
     system_ticks++;
-    if ( ( system_ticks & 0x3 ) == 0 )
-    {
 #ifdef DEBUG
-        PORTB ^= PIN_LED0;
+    PORTB ^= PIN_LED0;
 #endif
-        seconds++;
-        
-        // Check for startup conditions
-        countdown--;
-        if ( countdown == 0 )
+    seconds++;
+    
+    // Check for startup conditions
+    countdown--;
+    if ( countdown == 0 )
+    {
+        power_event( START_TIMEOUT );
+    }
+    
+    // Forced power-off check
+    if ( ( PIND & PIN_BUTTON ) == 0 )
+    {
+        button_hold_count++;
+        if ( button_hold_count == 5 )
         {
-            power_event( START_TIMEOUT );
+            power_down();
         }
-        
-        // Forced power-off check
-        if ( ( PIND & PIN_BUTTON ) == 0 )
-        {
-            button_hold_count++;
-            if ( button_hold_count == 5 )
-            {
-                power_down();
-            }
-        }
-        else
-        {
-            button_hold_count = 0;
-        }
+    }
+    else
+    {
+        button_hold_count = 0;
     }
     
 }
@@ -249,9 +246,7 @@ void timer2_init( void )
     TCCR2B = 0;
     TCCR2A = 0;
     TCNT2 = 0;
-    TCCR2B = ( 1 << CS21 ) | ( 1 << CS20 );    // clk/32 (250ms)
-//    TCCR2B = ( 1 << CS22 );                    // clk/64 (500ms)
-//    TCCR2B = ( 1 << CS22 ) | ( 1 << CS20 );    // clk/128 (1s)
+    TCCR2B = ( 1 << CS22 ) | ( 1 << CS20 );    // clk/128 (1s)
     TIMSK2 = ( 1 << TOIE2 );
 }
 

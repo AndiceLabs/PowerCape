@@ -8,10 +8,12 @@
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
 #include "board.h"
+#include "eeprom.h"
 #include "registers.h"
 #include "twi_slave.h"
 
 extern volatile uint16_t system_ticks;
+volatile uint8_t rebootflag = 0;
 
 uint8_t mcusr __attribute__ ((section (".noinit")));
 
@@ -20,7 +22,7 @@ void get_mcusr( void )
 {
     mcusr = MCUSR;
     MCUSR = 0;
-    wdt_enable( WDTO_1S );
+    wdt_enable( WDTO_2S );
 }
 
 
@@ -186,13 +188,24 @@ void state_machine( void )
 
 int main( void )
 {
+    uint8_t oscval;
     uint16_t last_tick = 0;
     
     // Platform setup
     board_init();
     registers_init();
     registers_set( REG_MCUSR, mcusr );
-    registers_set( REG_OSCCAL, OSCCAL );
+    
+    oscval = eeprom_get_calibration_value();
+    if ( oscval != 0xFF )
+    {
+        OSCCAL = oscval;
+    }
+    else
+    {
+        oscval = OSCCAL;
+    }
+    registers_set( REG_OSCCAL, oscval );
     
     set_sleep_mode( SLEEP_MODE_PWR_SAVE );
     sei();
@@ -200,13 +213,27 @@ int main( void )
     // Main loop
     while ( 1 )
     {
+        wdt_reset();
+        
         if ( last_tick != system_ticks )
         {
             last_tick = system_ticks;
             state_machine();
         }
 
-        wdt_reset();
+        if ( rebootflag != 0 )
+        {
+            eeprom_set_bootloader_flag();
+            wdt_enable( WDTO_30MS );
+            while ( 1 );
+        }
+        
+        if ( registers_get( REG_OSCCAL ) != oscval )
+        {
+            oscval = registers_get( REG_OSCCAL );
+            eeprom_set_calibration_value( oscval );
+            OSCCAL = oscval;
+        }
     }
 }
 

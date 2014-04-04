@@ -6,6 +6,8 @@
 
 
 extern volatile uint32_t seconds;
+extern volatile uint8_t rebootflag;
+
 static uint8_t registers[ NUM_REGISTERS ];
 
 // Internal interface
@@ -108,6 +110,11 @@ void registers_host_write( uint8_t index, uint8_t data )
             else
             {
                 board_led_off( 1 );
+            }
+            
+            if ( data & CONTROL_BOOTLOAD )
+            {
+                rebootflag = 1;
             }
             
             break;

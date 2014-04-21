@@ -260,4 +260,13 @@ void board_init( void )
 }
 
 
+void board_stop( void )
+{
+    TCCR2B = 0;
+    TCCR2A = 0;
+    TCNT2 = 0;
+    PCMSK0 = PCMSK1 = PCMSK2 = 0;
+    DDRB = DDRC = DDRD = 0;
+}
+
 

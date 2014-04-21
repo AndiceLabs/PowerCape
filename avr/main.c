@@ -191,6 +191,13 @@ int main( void )
     uint8_t oscval;
     uint16_t last_tick = 0;
     
+    // Make sure DIV8 is selected
+    if ( CLKPR != 0x03 )    // Div8
+    {
+        CLKPR = ( 1 << CLKPCE );
+        CLKPR = 0x03;
+    }
+    
     // Platform setup
     board_init();
     registers_init();
@@ -223,7 +230,10 @@ int main( void )
 
         if ( rebootflag != 0 )
         {
+            twi_slave_stop();
+            board_stop();
             eeprom_set_bootloader_flag();
+            cli();
             wdt_enable( WDTO_30MS );
             while ( 1 );
         }

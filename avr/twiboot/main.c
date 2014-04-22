@@ -73,6 +73,7 @@
 #define LED_GN_TOGGLE()		    PORTB ^= ( 1 << PB1 )
 #define LED_OFF()		        PORTB = 0x00
 
+#define EEPROM_FLAGS            ( (uint8_t*)0 )
 #define EE_FLAG_LOADER          0x01
 #define PIN_CP                  ( 1 << PD6 )        // PCINT22
 #define PIN_D                   ( 1 << PD7 )        // PCINT23
@@ -452,7 +453,9 @@ void disable_wdt_timer( void )
 int main( void ) __attribute__( ( noreturn ) );
 int main( void )
 {
-    flags = eeprom_read_byte( (uint8_t*)0 );
+    uint8_t i;
+
+    flags = eeprom_read_byte( EEPROM_FLAGS );
 
     /* Bootloader or application code? */
     if ( pgm_read_word_near( 0 ) == 0xFFFF)
@@ -519,15 +522,12 @@ int main( void )
         MCUCR = ( 0 << IVSEL );
 #endif
 
+        i = eeprom_read_byte( EEPROM_FLAGS );
+        i &= ~EE_FLAG_LOADER;
+        eeprom_update_byte( EEPROM_FLAGS, i );
+        eeprom_busy_wait();
+
         LED_OFF();
-
-        uint16_t wait = 0x0000;
-
-        do
-        {
-            __asm volatile( "nop" );
-        }
-        while( --wait );
     }
 
     jump_to_app();

@@ -22,19 +22,20 @@
 #include <avr/pgmspace.h>
 
 /*
- * atmega8:
- * Fuse H: 0xda (512 words bootloader)
- * Fuse L: 0x84 (8Mhz internal RC-Osz., 2.7V BOD)
+ * atmega88p:
+ * Fuse E: 0x00 (1024 words bootloader)
+ * Fuse H: 0xdf (BOD disabled)
+ * Fuse L: 0xe2 (8Mhz internal RC-Osc.)
  *
- * atmega88:
- * Fuse E: 0xfa (512 words bootloader)
- * Fuse H: 0xdd (2.7V BOD)
- * Fuse L: 0xc2 (8Mhz internal RC-Osz.)
- *
- * atmega168:
- * Fuse E: 0xfa (512 words bootloader)
- * Fuse H: 0xdd (2.7V BOD)
- * Fuse L: 0xc2 (8Mhz internal RC-Osz.)
+ * atmega168p:
+ * Fuse E: 0x00 (1024 words bootloader)
+ * Fuse H: 0xdf (BOD disabled)
+ * Fuse L: 0xe2 (8Mhz internal RC-Osc.)
+ * 
+ * atmega328p:
+ * Fuse E: 0x07 (BOD disabled)
+ * Fuse H: 0xda (1024 words bootloader)
+ * Fuse L: 0xe2 (8Mhz internal RC-Osc.)
  */
 
 #if defined (__AVR_ATmega8__)
@@ -424,6 +425,7 @@ ISR( TWI_vect )
     }
 }
 
+
 ISR( TIMER0_OVF_vect )
 {
     /* restart timer */
@@ -432,6 +434,7 @@ ISR( TIMER0_OVF_vect )
     /* blink LED while running */
     LED_GN_TOGGLE();
 }
+
 
 static void ( *jump_to_app )( void ) __attribute__( ( noreturn ) ) = 0x0000;
 
@@ -449,6 +452,7 @@ void disable_wdt_timer( void )
     WDTCSR = ( 0 << WDE );
 }
 #endif
+
 
 int main( void ) __attribute__( ( noreturn ) );
 int main( void )

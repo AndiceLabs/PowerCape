@@ -15,7 +15,8 @@ enum registers_type {
     REG_SECONDS_1,              // 10   "
     REG_SECONDS_2,              // 11   "
     REG_SECONDS_3,              // 12   "
-        
+    REG_EXTENDED,               // 13   Indicator of extended register set
+    REG_CAPABILITY,             // 14   Version/feature "level"
     NUM_REGISTERS
 };
 
@@ -36,7 +37,10 @@ enum registers_type {
 #define START_TIMEOUT           0x08
 #define START_ALL               0x0F
 
+// CAPABILITY levels
+#define CAPABILITY_RTC          0x00
 
+#if defined( powercape )
 void registers_init( void );
 inline void registers_set_mask( uint8_t index, uint8_t mask );
 inline void registers_clear_mask( uint8_t index, uint8_t mask );
@@ -44,7 +48,7 @@ inline uint8_t registers_get( uint8_t index );
 inline void registers_set( uint8_t idx, uint8_t data );
 uint8_t registers_host_read( uint8_t idx );
 void registers_host_write( uint8_t idx, uint8_t data );
-
+#endif
 
 #endif  // __REGISTERS_H__
 

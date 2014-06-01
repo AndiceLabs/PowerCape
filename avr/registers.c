@@ -83,6 +83,7 @@ void registers_host_write( uint8_t index, uint8_t data )
             OSCCAL = data;
             break;
         }
+        
         case REG_CONTROL:
         {
             if ( data & CONTROL_CE )
@@ -127,6 +128,15 @@ void registers_host_write( uint8_t index, uint8_t data )
             registers_set_mask( REG_START_ENABLE, START_TIMEOUT );
             break;
         }
+
+        case REG_SECONDS_0:
+        case REG_SECONDS_1:
+        case REG_SECONDS_2:
+        case REG_SECONDS_3:
+        {
+            seconds = *(uint32_t*)&registers[ REG_SECONDS_0 ];
+            break;
+        }
         
         default:
         {
@@ -143,5 +153,7 @@ void registers_init( void )
     registers[ REG_RESTART_HOURS ]   = 0;
     registers[ REG_RESTART_MINUTES ] = 0;
     registers[ REG_RESTART_SECONDS ] = 0;
+    registers[ REG_EXTENDED ]        = 0x69;
+    registers[ REG_CAPABILITY ]     = CAPABILITY_RTC;
 }
 

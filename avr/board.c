@@ -254,9 +254,8 @@ void timer2_init( void )
 void board_init( void )
 {
     board_gpio_config();
-    PRR |= ( ( 1 << PRTIM0 ) | ( 1 << PRTIM1 ) );
+    PRR = ( ( 1 << PRTIM0 ) | ( 1 << PRTIM1 ) | ( 1 << PRSPI ) | ( 1 << PRUSART0 ) | ( 1 << PRADC ) );
     timer2_init();    
-    PRR |= ( ( 1 << PRSPI ) | ( 1 << PRUSART0 ) | ( 1 << PRADC ) );
 }
 
 

@@ -4,6 +4,7 @@
 #include "registers.h"
 #include "twi_slave.h"
 
+
 uint8_t data_count = 0;
 uint8_t reg_index = 0;
 
@@ -20,6 +21,7 @@ ISR( TWI_vect )
             data_count = 0;
             break;
         }
+        
         case 0xA8:  // SLA+R
         case 0xB8:  // Data sent + ACK
         {
@@ -31,7 +33,8 @@ ISR( TWI_vect )
             }
                 
             break;
-        }        
+        }
+        
         case 0x80:  // data RX
         {
             data = TWDR;
@@ -43,19 +46,23 @@ ISR( TWI_vect )
             else
             {
                 registers_host_write( reg_index++, data );
-                
-                if ( reg_index >= NUM_REGISTERS )
-                {
-                    reg_index = 0;
-                }
             }
+            
+            if ( reg_index >= NUM_REGISTERS )
+            {
+                reg_index = 0;
+            }
+            
             data_count++;
+            break;
         }
+        
         case 0xC0:  // data TX + NAK
         case 0xC8:  // last data (TWEA=0) + ACK
         {
             break;
         }
+        
         default:
         {
             break;

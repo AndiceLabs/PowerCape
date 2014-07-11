@@ -7,6 +7,7 @@
 #include <avr/sleep.h>
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
+#include <avr/delay.h>
 #include "board.h"
 #include "eeprom.h"
 #include "registers.h"
@@ -75,7 +76,7 @@ void state_machine( void )
             if ( board_3v3() )
             {
                 retries = 3;
-                power_state = STATE_POWER_UP;
+                power_state = STATE_CHECK_3V;
             }
             else
             {
@@ -139,7 +140,10 @@ void state_machine( void )
         case STATE_POWER_UP:
         {
             retries--;
+            board_hold_reset();
             board_power_on();
+            _delay_ms( 250 );
+            board_release_reset();
             power_state = STATE_CHECK_3V;            
             break;
         }

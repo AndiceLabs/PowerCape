@@ -62,6 +62,8 @@ void board_ce( uint8_t enable );
 
 uint8_t board_3v3( void );
 uint8_t board_pgood( void );
+void board_hold_reset( void );
+void board_release_reset( void );
 
 void board_enable_interrupt( uint8_t mask );
 void board_disable_interrupt( uint8_t mask );

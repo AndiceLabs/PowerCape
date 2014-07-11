@@ -102,6 +102,19 @@ uint8_t board_3v3( void )
 }
 
 
+void board_hold_reset( void )
+{
+    PORTD &= ~PIN_DETECT;
+    DDRD |= PIN_DETECT;
+}
+
+
+void board_release_reset( void )
+{
+    DDRD &= ~PIN_DETECT;
+}
+
+
 uint8_t board_pgood( void )
 {
     uint8_t rc = 0;

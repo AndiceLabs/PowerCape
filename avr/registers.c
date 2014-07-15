@@ -2,11 +2,13 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "registers.h"
+#include "eeprom.h"
 #include "board.h"
 
 
 extern volatile uint32_t seconds;
 extern volatile uint8_t rebootflag;
+extern volatile uint8_t activity_watchdog;
 
 static uint8_t registers[ NUM_REGISTERS ];
 
@@ -38,6 +40,11 @@ inline void registers_set( uint8_t index, uint8_t value )
 // Host interface
 uint8_t registers_host_read( uint8_t index )
 {
+    if ( activity_watchdog )
+    {
+        activity_watchdog = 0;
+    }
+    
     switch ( index )
     {
         case REG_STATUS:
@@ -74,6 +81,11 @@ uint8_t registers_host_read( uint8_t index )
 
 void registers_host_write( uint8_t index, uint8_t data )
 {
+    if ( activity_watchdog )
+    {
+        activity_watchdog = 0;
+    }
+
     registers[ index ] = data;
     
     switch ( index )
@@ -138,6 +150,13 @@ void registers_host_write( uint8_t index, uint8_t data )
             break;
         }
         
+        case REG_EXTENDED:
+        {
+            // Don't let this register change
+            registers[ REG_EXTENDED ] = 0x69;
+            break;
+        }
+        
         default:
         {
             break;
@@ -148,12 +167,15 @@ void registers_host_write( uint8_t index, uint8_t data )
 
 void registers_init( void )
 {
-    registers[ REG_CONTROL ]        = CONTROL_CE;
-    registers[ REG_START_ENABLE ]   = START_ALL;
+    registers[ REG_CONTROL ]         = CONTROL_CE;
+    registers[ REG_START_ENABLE ]    = START_ALL;
     registers[ REG_RESTART_HOURS ]   = 0;
     registers[ REG_RESTART_MINUTES ] = 0;
     registers[ REG_RESTART_SECONDS ] = 0;
     registers[ REG_EXTENDED ]        = 0x69;
-    registers[ REG_CAPABILITY ]     = CAPABILITY_RTC;
+    registers[ REG_CAPABILITY ]      = CAPABILITY_WDT;
+    registers[ REG_BOARD_TYPE ]      = eeprom_get_board_type();
+    registers[ REG_BOARD_REV ]       = eeprom_get_revision_value();
+    registers[ REG_BOARD_STEP ]      = eeprom_get_stepping_value();
 }
 

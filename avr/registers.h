@@ -15,8 +15,16 @@ enum registers_type {
     REG_SECONDS_1,              // 10   "
     REG_SECONDS_2,              // 11   "
     REG_SECONDS_3,              // 12   "
-    REG_EXTENDED,               // 13   Indicator of extended register set
-    REG_CAPABILITY,             // 14   Version/feature "level"
+    REG_EXTENDED,               // 13   Indicator that extended register set follows
+    REG_CAPABILITY,             // 14   Firmware version/feature "level"
+    REG_BOARD_TYPE,             // 15   Board type (ie: BeagleBone, Pi, etc.)
+    REG_BOARD_REV,              // 16   Hardware revision (if known) in ASCII (ie: 'A')
+    REG_BOARD_STEP,             // 17   Hardware stepping (if known) in ASCII (ie: '1')
+    REG_WDT_RESET,              // 18   Reset watchdog countdown register (seconds, 0 to disable)
+    REG_WDT_POWER,              // 19   Power-cycle watchdog countdown register (seconds, 0 to disable)
+    REG_WDT_STOP,               // 20   Power-off countdown (single-shot seconds, 0 to disable)
+    REG_WDT_START,              // 21   Start-up activity watchdog countdown (seconds, 0 to disable)
+    
     NUM_REGISTERS
 };
 
@@ -38,7 +46,13 @@ enum registers_type {
 #define START_ALL               0x0F
 
 // CAPABILITY levels
-#define CAPABILITY_RTC          0x00
+#define CAPABILITY_RTC          0x00    // The presence of the "extended" register alone indicates RTC
+#define CAPABILITY_WDT          0x01    // Board type, revision level, and watchdog functionality
+
+// Board types
+#define BOARD_TYPE_BONE         0x00
+#define BOARD_TYPE_PI           0x01
+#define BOARD_TYPE_UNKNOWN      0xFF
 
 #if defined( powercape )
 void registers_init( void );

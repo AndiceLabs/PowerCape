@@ -16,6 +16,7 @@
 
 extern volatile uint16_t system_ticks;
 volatile uint8_t rebootflag = 0;
+volatile uint8_t activity_watchdog;
 
 uint8_t mcusr __attribute__ ((section (".noinit")));
 
@@ -37,6 +38,7 @@ enum state_type {
     STATE_CHECK_3V,
     STATE_ON,
     STATE_POWER_DOWN,
+    STATE_WDT_POWER,
 };
 
 volatile uint8_t power_state = STATE_INIT;
@@ -61,6 +63,70 @@ void power_event( uint8_t reason )
             retries = 3;
             power_state = STATE_POWER_UP;
             registers_set_mask( REG_START_REASON, reason );
+        }
+    }
+}
+
+
+void watchdog_reset( void )
+{
+    // Make sure there is no start reason
+    registers_set( REG_START_REASON, 0 );
+    board_hold_reset();
+    _delay_ms( 250 );
+    board_release_reset();
+}
+
+
+void watchdog_check( void )
+{
+    uint8_t i;
+    
+    // Check reset watchdog
+    i = registers_get( REG_WDT_RESET );
+    if ( i != 0 )
+    {
+        i -= 1;
+        registers_set( REG_WDT_RESET, i );
+        if ( i == 0 )
+        {
+            watchdog_reset();
+            registers_set( REG_WDT_POWER, 0 );
+            registers_set( REG_WDT_STOP, 0 );
+        }
+    }
+    
+    // Check power-cycle watchdog
+    i = registers_get( REG_WDT_POWER );
+    if ( i != 0 )
+    {
+        i -= 1;
+        registers_set( REG_WDT_POWER, i );
+        if ( i == 0 )
+        {
+            power_state = STATE_WDT_POWER;
+        }
+    }
+
+    // Check power-down watchdog
+    i = registers_get( REG_WDT_STOP );
+    if ( i != 0 )
+    {
+        i -= 1;
+        registers_set( REG_WDT_STOP, i );
+        if ( i == 0 )
+        {
+            power_state = STATE_POWER_DOWN;
+        }
+    }
+    
+    // Check start-up activity watchdog
+    if ( activity_watchdog != 0 )
+    {
+        activity_watchdog -= 1;
+        if ( activity_watchdog == 0 )
+        {
+            power_state = STATE_WDT_POWER;
         }
     }
 }
@@ -140,6 +206,11 @@ void state_machine( void )
         case STATE_POWER_UP:
         {
             retries--;
+
+            registers_set( REG_WDT_RESET, 0 );
+            registers_set( REG_WDT_POWER, 0 );
+            registers_set( REG_WDT_STOP, 0 );
+
             board_hold_reset();
             board_power_on();
             _delay_ms( 250 );
@@ -155,6 +226,7 @@ void state_machine( void )
                 power_state = STATE_ON;
                 twi_slave_init();
                 board_disable_interrupt( START_ALL );
+                activity_watchdog = registers_get( REG_WDT_START );
             }
             else
             {
@@ -185,6 +257,15 @@ void state_machine( void )
             twi_slave_stop();
             board_power_off();
             power_state = STATE_CLEAR_MASK;
+            break;
+        }
+        
+        case STATE_WDT_POWER:
+        {
+            twi_slave_stop();
+            board_power_off();
+            retries = 3;
+            power_state = STATE_POWER_UP;
             break;
         }
     }
@@ -227,12 +308,17 @@ int main( void )
     {
         wdt_reset();
         
+        // System ticks are seconds
         if ( last_tick != system_ticks )
         {
             last_tick = system_ticks;
             state_machine();
+            if ( power_state == STATE_ON )
+            {
+                watchdog_check();                
+            }
         }
-
+        
         if ( rebootflag != 0 )
         {
             twi_slave_stop();

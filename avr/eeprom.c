@@ -27,3 +27,21 @@ uint8_t eeprom_get_calibration_value( void )
 {
     return eeprom_read_byte( EEPROM_CALIBRATION );
 }
+
+
+uint8_t eeprom_get_board_type( void )
+{
+    return eeprom_read_byte( EEPROM_BOARD );
+}
+
+
+uint8_t eeprom_get_revision_value( void )
+{
+    return eeprom_read_byte( EEPROM_REVISION );
+}
+
+
+uint8_t eeprom_get_stepping_value( void )
+{
+    return eeprom_read_byte( EEPROM_STEPPING );
+}

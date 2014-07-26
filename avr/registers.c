@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <avr/io.h>
+#include <avr/eeprom.h>
 #include <avr/interrupt.h>
 #include "registers.h"
 #include "eeprom.h"
+#include "twi_slave.h"
 #include "board.h"
 
 
@@ -157,6 +159,12 @@ void registers_host_write( uint8_t index, uint8_t data )
             break;
         }
         
+        case REG_I2C_ADDRESS:
+        {
+            eeprom_update_byte( EEPROM_I2C_ADDR, data );
+            break;
+        }
+        
         default:
         {
             break;
@@ -167,6 +175,8 @@ void registers_host_write( uint8_t index, uint8_t data )
 
 void registers_init( void )
 {
+    uint8_t i;
+    
     registers[ REG_CONTROL ]         = CONTROL_CE;
     registers[ REG_START_ENABLE ]    = START_ALL;
     registers[ REG_RESTART_HOURS ]   = 0;
@@ -177,5 +187,12 @@ void registers_init( void )
     registers[ REG_BOARD_TYPE ]      = eeprom_get_board_type();
     registers[ REG_BOARD_REV ]       = eeprom_get_revision_value();
     registers[ REG_BOARD_STEP ]      = eeprom_get_stepping_value();
+    
+    i = eeprom_get_i2c_address();
+    if ( i == 0xFF )
+    {
+        i = TWI_SLAVE_ADDRESS;
+    }
+    registers[ REG_I2C_ADDRESS ]     = i;
 }
 

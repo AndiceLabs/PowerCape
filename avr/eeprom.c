@@ -45,3 +45,9 @@ uint8_t eeprom_get_stepping_value( void )
 {
     return eeprom_read_byte( EEPROM_STEPPING );
 }
+
+
+uint8_t eeprom_get_i2c_address( void )
+{
+    return eeprom_read_byte( EEPROM_I2C_ADDR );
+}

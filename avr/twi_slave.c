@@ -76,7 +76,15 @@ ISR( TWI_vect )
 
 void twi_slave_init( void )
 {
-    TWAR = TWI_SLAVE_ADDRESS;
+    uint8_t i;
+    
+    i = registers_get( REG_I2C_ADDRESS );
+    if ( i & 0x80 )
+    {
+        i = TWI_SLAVE_ADDRESS;
+    }
+    
+    TWAR = ( i << 1 );
     TWCR = ( 1 << TWEA ) | ( 1 << TWEN ) | ( 1 << TWIE );
 }
 

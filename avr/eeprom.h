@@ -6,6 +6,7 @@
 #define EEPROM_BOARD        ( (uint8_t*)2 )
 #define EEPROM_REVISION     ( (uint8_t*)3 )
 #define EEPROM_STEPPING     ( (uint8_t*)4 )
+#define EEPROM_I2C_ADDR     ( (uint8_t*)5 )
 
 #define EE_FLAG_LOADER      0x01
 
@@ -15,6 +16,6 @@ uint8_t eeprom_get_calibration_value( void );
 uint8_t eeprom_get_board_type( void );
 uint8_t eeprom_get_revision_value( void );
 uint8_t eeprom_get_stepping_value( void );
-
+uint8_t eeprom_get_i2c_address( void );
 
 #endif  // __EEPROM_H__

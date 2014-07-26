@@ -7,7 +7,7 @@
 #include <avr/sleep.h>
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
-#include <avr/delay.h>
+#include <util/delay.h>
 #include "board.h"
 #include "eeprom.h"
 #include "registers.h"
@@ -215,7 +215,7 @@ void state_machine( void )
             board_power_on();
             _delay_ms( 250 );
             board_release_reset();
-            power_state = STATE_CHECK_3V;            
+            power_state = STATE_CHECK_3V;
             break;
         }
         
@@ -319,6 +319,7 @@ int main( void )
             }
         }
         
+        // Bootloader entry
         if ( rebootflag != 0 )
         {
             twi_slave_stop();
@@ -329,6 +330,7 @@ int main( void )
             while ( 1 );
         }
         
+        // Register handling
         if ( registers_get( REG_OSCCAL ) != oscval )
         {
             oscval = registers_get( REG_OSCCAL );

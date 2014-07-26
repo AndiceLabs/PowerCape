@@ -20,6 +20,7 @@
 #include <avr/interrupt.h>
 #include <avr/boot.h>
 #include <avr/pgmspace.h>
+#include <util/delay.h>
 
 /*
  * atmega88p:
@@ -242,6 +243,7 @@ ISR( TWI_vect )
     static uint8_t bcnt;
     uint8_t data;
     uint8_t ack = ( 1 << TWEA );
+	uint8_t flash_it = 0;
 
     switch( TWSR & 0xF8 )
     {
@@ -348,14 +350,16 @@ ISR( TWI_vect )
                             }
                             else
                             {
-                                write_flash_page();
+                                flash_it = 1;
+                                //write_flash_page();
                                 ack = ( 0 << TWEA );
                             }
 
                             break;
 #if (EEPROM_SUPPORT)
                         case CMD_WRITE_EEPROM:
-                            write_eeprom_byte( data );
+                            flash_it = 2;
+                            //write_eeprom_byte( data );
                             bcnt++;
                             break;
 #endif
@@ -371,6 +375,13 @@ ISR( TWI_vect )
                 bcnt = 0;
 
             TWCR |= ( 1 << TWINT ) | ack;
+
+            if (flash_it == 1)
+                write_flash_page();
+#if (EEPROM_SUPPORT)
+            if (flash_it == 2)
+                write_eeprom_byte(data);
+#endif
             break;
 
             /* SLA+R received, ACK returned -> send data */

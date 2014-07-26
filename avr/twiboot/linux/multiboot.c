@@ -60,12 +60,13 @@ static void progress_mode0_cb(const char *msg, int pos, int size)
 static void progress_mode1_cb(const char *msg, int pos, int size)
 {
     if (pos != -1 && size != -1) {
-        char stars[50];
+        char stars[51];
 
         int i;
         int count = (pos * sizeof(stars) / size);
         for (i = 0; i < sizeof(stars); i++)
             stars[i] = (i < count) ? '*' : ' ';
+	stars[sizeof(stars)-1] = 0;
 
         printf("%-15s: [%s] (%d)\r", msg, stars, pos);
     }

@@ -88,8 +88,6 @@ void registers_host_write( uint8_t index, uint8_t data )
         activity_watchdog = 0;
     }
 
-    registers[ index ] = data;
-    
     switch ( index )
     {
         case REG_OSCCAL:
@@ -139,8 +137,9 @@ void registers_host_write( uint8_t index, uint8_t data )
         case REG_RESTART_MINUTES:
         case REG_RESTART_SECONDS:
         {
+            registers[ index ] = data;    
             registers_set_mask( REG_START_ENABLE, START_TIMEOUT );
-            break;
+            return;
         }
 
         case REG_SECONDS_0:
@@ -148,20 +147,38 @@ void registers_host_write( uint8_t index, uint8_t data )
         case REG_SECONDS_2:
         case REG_SECONDS_3:
         {
+            registers[ index ] = data;    
             seconds = *(uint32_t*)&registers[ REG_SECONDS_0 ];
-            break;
+            return;
         }
         
         case REG_EXTENDED:
         {
             // Don't let this register change
-            registers[ REG_EXTENDED ] = 0x69;
-            break;
+            return;
         }
         
         case REG_I2C_ADDRESS:
         {
-            eeprom_update_byte( EEPROM_I2C_ADDR, data );
+            // TODO: qualify address
+            eeprom_update_byte( EEPROM_I2C_ADDR, data );    // TODO: interrupt context
+            break;
+        }
+
+        case REG_I2C_ICHARGE:
+        {
+            if ( data > 3 ) data = 3;
+            board_set_charge_current( data );
+            eeprom_update_byte( EEPROM_CHG_CURRENT, data );    // TODO: interrupt context
+            break;
+        }
+
+        case REG_I2C_TCHARGE:
+        {
+            if ( data < 3 ) data = 3;
+            if ( data > 10 ) data = 10;
+            board_set_charge_timer( data );
+            eeprom_update_byte( EEPROM_CHG_TIMER, data );    // TODO: interrupt context
             break;
         }
         
@@ -170,12 +187,14 @@ void registers_host_write( uint8_t index, uint8_t data )
             break;
         }
     }
+    
+    registers[ index ] = data;    
 }
 
 
 void registers_init( void )
 {
-    uint8_t i;
+    uint8_t t;
     
     registers[ REG_CONTROL ]         = CONTROL_CE;
     registers[ REG_START_ENABLE ]    = START_ALL;
@@ -183,16 +202,30 @@ void registers_init( void )
     registers[ REG_RESTART_MINUTES ] = 0;
     registers[ REG_RESTART_SECONDS ] = 0;
     registers[ REG_EXTENDED ]        = 0x69;
-    registers[ REG_CAPABILITY ]      = CAPABILITY_WDT;
+    registers[ REG_CAPABILITY ]      = CAPABILITY_CHARGE;
     registers[ REG_BOARD_TYPE ]      = eeprom_get_board_type();
     registers[ REG_BOARD_REV ]       = eeprom_get_revision_value();
     registers[ REG_BOARD_STEP ]      = eeprom_get_stepping_value();
     
-    i = eeprom_get_i2c_address();
-    if ( i == 0xFF )
+    t = eeprom_get_i2c_address();
+    if ( t == 0xFF )
     {
-        i = TWI_SLAVE_ADDRESS;
+        t = TWI_SLAVE_ADDRESS;
     }
-    registers[ REG_I2C_ADDRESS ]     = i;
+    registers[ REG_I2C_ADDRESS ]     = t;
+    
+    t = eeprom_get_charge_current();
+    if ( t == 0xFF )
+    {
+        t = 1;  // 1/3 amp default
+    }
+    registers[ REG_I2C_ICHARGE ]     = t;
+
+    t = eeprom_get_charge_timer();
+    if ( t == 0xFF )
+    {
+        t = 3;  // 3 hours default
+    }
+    registers[ REG_I2C_TCHARGE ]      = t;
 }
 

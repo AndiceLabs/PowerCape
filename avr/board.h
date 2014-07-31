@@ -13,9 +13,9 @@
 
 // Port C
 #define PIN_CE          ( 1 << PC0 )        // NC on P1 board
-#define PIN_PC1         ( 1 << PC1 )        // NC on P0 board
+#define PIN_ISET2       ( 1 << PC1 )        // rev A2 - 1.5k
 #define PIN_PGOOD       ( 1 << PC2 )        // PCINT10
-#define PIN_ADC3        ( 1 << PC3 )        // NC
+#define PIN_ISET3       ( 1 << PC3 )        // rev A2 - 3k
 #define PIN_SDA         ( 1 << PC4 )        // I2C
 #define PIN_SCL         ( 1 << PC5 )        // I2C
 

@@ -38,6 +38,7 @@ ISR( TWI_vect )
         case 0x80:  // data RX
         {
             data = TWDR;
+            TWCR |= ( 1 << TWINT );
             
             if ( data_count == 0 )
             {
@@ -54,7 +55,7 @@ ISR( TWI_vect )
             }
             
             data_count++;
-            break;
+            return;
         }
         
         case 0xC0:  // data TX + NAK

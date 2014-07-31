@@ -5,7 +5,7 @@ CPUCLK         = 1000000
 OBJ            = main.o board.o twi_slave.o registers.o eeprom.o
 OPTIMIZE       = -Os
 DEFS           = -I. -D$(PLATFORM) -DF_CPU=$(CPUCLK)
-#DEFS           += -DDEBUG
+DEFS           += -DDEBUG
 LIBS           =
 
 # Override is only needed by avr-lib build system.

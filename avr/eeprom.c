@@ -51,3 +51,15 @@ uint8_t eeprom_get_i2c_address( void )
 {
     return eeprom_read_byte( EEPROM_I2C_ADDR );
 }
+
+
+uint8_t eeprom_get_charge_current( void )
+{
+    return eeprom_read_byte( EEPROM_CHG_CURRENT );
+}
+
+
+uint8_t eeprom_get_charge_timer( void )
+{
+    return eeprom_read_byte( EEPROM_CHG_TIMER );
+}

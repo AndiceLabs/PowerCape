@@ -278,11 +278,13 @@ int main( void )
     uint16_t last_tick = 0;
     
     // Make sure DIV8 is selected
+#if 0 // PI test: staying at 8MHz fixes bus timeouts
     if ( CLKPR != 0x03 )    // Div8
     {
         CLKPR = ( 1 << CLKPCE );
         CLKPR = 0x03;
     }
+#endif
     
     // Platform setup
     board_init();
@@ -303,6 +305,9 @@ int main( void )
     set_sleep_mode( SLEEP_MODE_PWR_SAVE );
     sei();
 
+    board_set_charge_current( registers_get( REG_I2C_ICHARGE ) );
+    board_set_charge_timer( registers_get( REG_I2C_TCHARGE ) );
+    
     // Main loop
     while ( 1 )
     {

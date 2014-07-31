@@ -98,20 +98,31 @@ void board_ce( uint8_t enable )
 
 uint8_t board_3v3( void )
 {
+    // PPi P1 hack (no 3v3 detect)
+    if ( registers_get( REG_BOARD_TYPE ) == BOARD_TYPE_PI )
+    {
+        return 1;
+    }
     return ( PIND & PIN_DETECT );
 }
 
 
 void board_hold_reset( void )
 {
-    PORTD &= ~PIN_DETECT;
-    DDRD |= PIN_DETECT;
+    if ( registers_get( REG_BOARD_TYPE ) != BOARD_TYPE_PI )
+    {
+        PORTD &= ~PIN_DETECT;
+        DDRD |= PIN_DETECT;
+    }
 }
 
 
 void board_release_reset( void )
 {
-    DDRD &= ~PIN_DETECT;
+    if ( registers_get( REG_BOARD_TYPE ) != BOARD_TYPE_PI )
+    {
+        DDRD &= ~PIN_DETECT;
+    }
 }
 
 
@@ -165,18 +176,43 @@ void board_disable_interrupt( uint8_t mask )
 }
 
 
+void board_set_charge_current( uint8_t thirds )
+{
+    uint8_t pins;
+    
+    DDRC &= ~( PIN_ISET2 | PIN_ISET3 );
+    PORTC &= ~( PIN_ISET2 | PIN_ISET3 );
+    
+    switch ( thirds )
+    {
+        case 3:  pins = ( PIN_ISET2 | PIN_ISET3 ); break;
+        case 2:  pins = PIN_ISET2; break;
+        case 1:
+        default: pins = PIN_ISET3; break;
+        case 0:  pins = 0; break;
+    }
+    DDRC |= pins;
+}
+
+
+void board_set_charge_timer( uint8_t hours )
+{
+    // Does nothing yet
+}
+
+
 void board_gpio_config( void )
 {
     // Enable pull-ups on input pins to keep unconnected 
     // ones from floating
     PORTB = ~( PIN_LED1 | PIN_LED0 | PIN_XTAL1 | PIN_XTAL2 );   // engage all PORTB pull-ups
-    DDRB = ( PIN_LED1 | PIN_LED0 );
+    DDRB  = ( PIN_LED1 | PIN_LED0 );
 
-    PORTC = ~( PIN_SDA | PIN_SCL | PIN_CE );
-    DDRC = 0;
+    PORTC  = ~( PIN_SDA | PIN_SCL | PIN_CE | PIN_ISET2 | PIN_ISET3 );
+    DDRC   = PIN_ISET3;
 
     PORTD = ~( PIN_CP | PIN_D | PIN_DETECT | PIN_TXD | PIN_RXD );
-    DDRD = ( PIN_CP | PIN_D );
+    DDRD  = ( PIN_CP | PIN_D );
 }
 
 

@@ -25,6 +25,8 @@ enum registers_type {
     REG_WDT_STOP,               // 20   Power-off countdown (single-shot seconds, 0 to disable)
     REG_WDT_START,              // 21   Start-up activity watchdog countdown (seconds, 0 to disable)
     REG_I2C_ADDRESS,            // 22   Slave address to use on I2C interface
+    REG_I2C_ICHARGE,            // 23   Charge current (1-3)/3 amp
+    REG_I2C_TCHARGE,            // 24   Charger timer in hours (3-10)
     
     NUM_REGISTERS
 };
@@ -50,6 +52,7 @@ enum registers_type {
 #define CAPABILITY_RTC          0x00    // The presence of the "extended" register alone indicates RTC
 #define CAPABILITY_WDT          0x01    // Board type, revision level, and watchdog functionality
 #define CAPABILITY_ADDR         0x02    // Programmable I2C address
+#define CAPABILITY_CHARGE       0x03    // Programmable charge current and timer
 
 // Board types
 #define BOARD_TYPE_BONE         0x00

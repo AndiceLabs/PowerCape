@@ -221,6 +221,7 @@ ISR( TIMER2_OVF_vect, ISR_BLOCK )
 {
     static uint8_t button_hold_count = 0;
     
+    TCNT2 = 0;
     // Handle RTC
     system_ticks++;
 #ifdef DEBUG

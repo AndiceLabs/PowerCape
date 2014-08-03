@@ -181,6 +181,7 @@ void state_machine( void )
             }
             else
             {
+                while ( ASSR & ( 1 << TCN2UB ) ) { /* wait */ }
                 sleep_enable();
                 sleep_cpu();
                 sleep_disable();
@@ -196,6 +197,7 @@ void state_machine( void )
             }
             else
             {
+                while ( ASSR & ( 1 << TCN2UB ) ) { /* wait */ }
                 sleep_enable();
                 sleep_cpu();
                 sleep_disable();

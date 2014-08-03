@@ -34,7 +34,9 @@ op_type operation = OP_DUMP;
 
 int interval = 60;
 int i2c_bus = 1;
+int i2c_address = INA_ADDRESS;
 int handle;
+int whole_numbers = 0;
 
 
 void msleep( int msecs )
@@ -114,8 +116,11 @@ void show_usage( char *progname )
     fprintf( stderr, "   Mode (required):\n" );
     fprintf( stderr, "      -h --help           Show usage.\n" );
     fprintf( stderr, "      -i --interval       Set interval for monitor mode.\n" );
+    fprintf( stderr, "      -w --whole          Show whole numbers only. Useful for scripts.\n" );
     fprintf( stderr, "      -v --voltage        Show battery voltage in mV.\n" );
     fprintf( stderr, "      -c --current        Show battery current in mA.\n" );
+    fprintf( stderr, "      -a --address <addr> Override I2C address of INA219 from default of 0x%02X.\n", i2c_address );
+    fprintf( stderr, "      -b --bus <i2c bus>  Override I2C bus from default of %d.\n", i2c_bus );
     exit( 1 );
 }
 
@@ -126,21 +131,62 @@ void parse( int argc, char *argv[] )
     {
         static const struct option lopts[] =
         {
+            { "address",    0, 0, 'a' },
+            { "bus",        0, 0, 'b' },
+            { "current",    0, 0, 'c' },
             { "help",       0, 0, 'h' },
             { "interval",   0, 0, 'i' },
             { "voltage",    0, 0, 'v' },
-            { "current",    0, 0, 'c' },
+            { "whole",      0, 0, 'w' },
             { NULL,         0, 0, 0 },
         };
         int c;
 
-        c = getopt_long( argc, argv, "hi:vc", lopts, NULL );
+        c = getopt_long( argc, argv, "a:b:chi:vw", lopts, NULL );
 
         if( c == -1 )
             break;
 
         switch( c )
         {
+            case 'a':
+            {
+                errno = 0;
+                i2c_address = (int)strtol( optarg, NULL, 0 );
+                if ( errno != 0 )
+                {
+                    fprintf( stderr, "Unknown address parameter %s.\n", optarg );
+                    exit( 1 );
+                }
+                break;
+            }
+
+            case 'b':
+            {
+                errno = 0;
+                i2c_bus = (int)strtol( optarg, NULL, 0 );
+                if ( errno != 0 )
+                {
+                    fprintf( stderr, "Unknown bus parameter %s.\n", optarg );
+                    exit( 1 );
+                }
+                break;
+            }
+
+            case 'c':
+            {
+                operation = OP_CURRENT;
+                break;
+            }
+
+            default:
+            case 'h':
+            {
+                operation = OP_NONE;
+                show_usage( argv[ 0 ] );
+                break;
+            }
+
             case 'i':
             {
                 operation = OP_MONITOR;
@@ -159,16 +205,9 @@ void parse( int argc, char *argv[] )
                 break;
             }
 
-            case 'c':
+            case 'w':
             {
-                operation = OP_CURRENT;
-                break;
-            }
-
-            case 'h':
-            {
-                operation = OP_NONE;
-                show_usage( argv[ 0 ] );
+                whole_numbers = 1;
                 break;
             }
         }
@@ -213,7 +252,15 @@ void show_current( void )
         fprintf( stderr, "Error reading current\n" );
         return;
     }
-    printf( "%04.1f\n", ma );
+    
+    if ( whole_numbers )
+    {
+        printf( "%4.0f\n", ma );
+    }
+    else
+    {
+        printf( "%04.1f\n", ma );
+    }
 }
 
 
@@ -226,7 +273,7 @@ void show_voltage( void )
         fprintf( stderr, "Error reading voltage\n" );
         return;
     }
-    printf( "%04.0f\n", mv );
+    printf( "%4.0f\n", mv );
 }
 
 
@@ -240,7 +287,14 @@ void show_voltage_current( void )
         return;
     }
 
-    printf( "%04.0fmV  %04.1fmA\n", mv, ma );
+    if ( whole_numbers )
+    {
+        printf( "%04.0fmV  %4.0fmA\n", mv, ma );
+    }
+    else
+    {
+        printf( "%04.0fmV  %04.1fmA\n", mv, ma );
+    }
 }
 
 
@@ -264,21 +318,21 @@ int main( int argc, char *argv[] )
 {
     char filename[ 20 ];
 
+    parse( argc, argv );
+
     snprintf( filename, 19, "/dev/i2c-%d", i2c_bus );
     handle = open( filename, O_RDWR );
     if ( handle < 0 ) 
     {
-        fprintf( stderr, "Error opening device: %s\n", strerror( errno ) );
+        fprintf( stderr, "Error opening bus %d: %s\n", i2c_bus, strerror( errno ) );
         exit( 1 );
     }
 
-    if ( ioctl( handle, I2C_SLAVE, INA_ADDRESS ) < 0 ) 
+    if ( ioctl( handle, I2C_SLAVE, i2c_address ) < 0 ) 
     {
-        fprintf( stderr, "IOCTL Error: %s\n", strerror( errno ) );
+        fprintf( stderr, "Error setting address %02X: %s\n", i2c_address, strerror( errno ) );
         exit( 1 );
     }
-
-    parse( argc, argv );
 
     switch ( operation )
     {

@@ -153,9 +153,7 @@ void state_machine( void )
         
         case STATE_CLEAR_MASK:
         {
-            uint8_t reg = registers_get( REG_START_ENABLE ); 
-            
-            board_enable_interrupt( reg );
+            board_enable_interrupt( registers_get( REG_START_ENABLE ) );
             board_begin_countdown();
             
             if ( board_pgood() )

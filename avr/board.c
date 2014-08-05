@@ -266,10 +266,13 @@ ISR( TIMER2_OVF_vect, ISR_BLOCK )
     seconds++;
     
     // Check for startup conditions
-    countdown--;
-    if ( countdown == 0 )
+    if ( countdown != 0 )
     {
-        power_event( START_TIMEOUT );
+        countdown--;
+        if ( countdown == 0 )
+        {
+            power_event( START_TIMEOUT );
+        }
     }
     
     // Forced power-off check

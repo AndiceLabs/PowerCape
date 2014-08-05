@@ -25,7 +25,7 @@ enum registers_type {
     REG_WDT_STOP,               // 20   Power-off countdown (single-shot seconds, 0 to disable)
     REG_WDT_START,              // 21   Start-up activity watchdog countdown (seconds, 0 to disable)
     REG_I2C_ADDRESS,            // 22   Slave address to use on I2C interface
-    REG_I2C_ICHARGE,            // 23   Charge current (1-3)/3 amp
+    REG_I2C_ICHARGE,            // 23   Charge current (0-3)/3 amp
     REG_I2C_TCHARGE,            // 24   Charger timer in hours (3-10)
     
     NUM_REGISTERS

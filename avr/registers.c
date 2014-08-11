@@ -183,7 +183,7 @@ void registers_init( void )
     registers[ REG_RESTART_MINUTES ] = 0;
     registers[ REG_RESTART_SECONDS ] = 0;
     registers[ REG_EXTENDED ]        = 0x69;
-    registers[ REG_CAPABILITY ]      = CAPABILITY_WDT;
+    registers[ REG_CAPABILITY ]      = CAPABILITY_ADDR;
     registers[ REG_BOARD_TYPE ]      = eeprom_get_board_type();
     registers[ REG_BOARD_REV ]       = eeprom_get_revision_value();
     registers[ REG_BOARD_STEP ]      = eeprom_get_stepping_value();

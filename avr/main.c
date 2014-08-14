@@ -181,10 +181,11 @@ void state_machine( void )
             }
             else
             {
-                while ( ASSR & ( 1 << TCN2UB ) ) { /* wait */ }
+                while ( ASSR & ( 1 << TCR2AUB ) ) { /* wait */ }
                 sleep_enable();
                 sleep_cpu();
                 sleep_disable();
+                TCCR2A = 0;
             }
             break;
         }
@@ -197,10 +198,11 @@ void state_machine( void )
             }
             else
             {
-                while ( ASSR & ( 1 << TCN2UB ) ) { /* wait */ }
+                while ( ASSR & ( 1 << TCR2AUB ) ) { /* wait */ }
                 sleep_enable();
                 sleep_cpu();
                 sleep_disable();
+                TCCR2A = 0;
             }
             break;
         }

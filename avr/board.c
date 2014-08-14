@@ -17,9 +17,9 @@ volatile uint32_t seconds;
 
 uint8_t board_begin_countdown( void )
 {
-    countdown = registers_get( REG_RESTART_HOURS ) * 3600;
-    countdown += registers_get( REG_RESTART_MINUTES ) * 60;
-    countdown += registers_get( REG_RESTART_SECONDS );
+    countdown = (uint32_t)registers_get( REG_RESTART_HOURS ) * 3600;
+    countdown += (uint32_t)registers_get( REG_RESTART_MINUTES ) * 60;
+    countdown += (uint32_t)registers_get( REG_RESTART_SECONDS );
     
     if ( countdown == 0 )
     {
@@ -221,7 +221,6 @@ ISR( TIMER2_OVF_vect, ISR_BLOCK )
 {
     static uint8_t button_hold_count = 0;
     
-    TCNT2 = 0;
     // Handle RTC
     system_ticks++;
 #ifdef DEBUG
@@ -249,7 +248,6 @@ ISR( TIMER2_OVF_vect, ISR_BLOCK )
     {
         button_hold_count = 0;
     }
-    
 }
 
 

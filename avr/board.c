@@ -4,6 +4,7 @@
 #include <avr/eeprom.h>
 #include <avr/sleep.h>
 #include "registers.h"
+#include "bb_i2c.h"
 #include "board.h"
 
 
@@ -98,11 +99,6 @@ void board_ce( uint8_t enable )
 
 uint8_t board_3v3( void )
 {
-    // PPi P1 hack (no 3v3 detect)
-    if ( registers_get( REG_BOARD_TYPE ) == BOARD_TYPE_PI )
-    {
-        return 1;
-    }
     return ( PIND & PIN_DETECT );
 }
 
@@ -195,9 +191,36 @@ void board_set_charge_current( uint8_t thirds )
 }
 
 
+uint8_t wiper_value[ 11 ] = {
+    38,     // 0
+    38,     // 1
+    38,     // 2
+    38,     // 3 - 30k
+    51,     // 4 - 40k
+    64,     // 5 - 50k
+    76,     // 6 - 60k
+    89,     // 7 - 70k
+    102,    // 8 - 80k
+    114,    // 9 - 90k
+    127,    // 10 - 100k (max)
+};
+
+
 void board_set_charge_timer( uint8_t hours )
 {
-    // Does nothing yet
+    uint8_t b;
+
+    if ( hours > 10 ) 
+    {
+        hours = 10;
+    }
+    
+    b = wiper_value[ hours ];
+    if ( bb_i2c_write( MCP_ADDR, &b, 1 ) )
+    {
+        // REB TODO: indicate error
+        registers_set( REG_I2C_TCHARGE, 0xEE );
+    }
 }
 
 
@@ -211,7 +234,7 @@ void board_gpio_config( void )
     PORTC  = ~( PIN_SDA | PIN_SCL | PIN_CE | PIN_ISET2 | PIN_ISET3 );
     DDRC   = PIN_ISET3;
 
-    PORTD = ~( PIN_CP | PIN_D | PIN_DETECT | PIN_TXD | PIN_RXD );
+    PORTD = ~( PIN_CP | PIN_D | PIN_DETECT | PIN_BB_SCL | PIN_BB_SDA );
     DDRD  = ( PIN_CP | PIN_D );
 }
 
@@ -306,7 +329,8 @@ void board_init( void )
 {
     board_gpio_config();
     PRR = ( ( 1 << PRTIM0 ) | ( 1 << PRTIM1 ) | ( 1 << PRSPI ) | ( 1 << PRUSART0 ) | ( 1 << PRADC ) );
-    timer2_init();    
+    timer2_init();
+    bb_i2c_init();
 }
 
 

@@ -2,9 +2,12 @@ PRG            = powercape
 PLATFORM       = powercape
 TARGET         = atmega328p
 CPUCLK         = 1000000
-OBJ            = main.o board.o twi_slave.o registers.o eeprom.o
+OBJ            = main.o board.o twi_slave.o bb_i2c.o registers.o eeprom.o
 OPTIMIZE       = -Os
-DEFS           = -I. -D$(PLATFORM) -DF_CPU=$(CPUCLK)
+DAY            = $(shell date +%d)
+MONTH          = $(shell date +%m)
+YEAR           = $(shell date +%y)
+DEFS           = -I. -D$(PLATFORM) -DF_CPU=$(CPUCLK) -DDAY=$(DAY) -DMONTH=$(MONTH) -DYEAR=$(YEAR)
 DEFS           += -DDEBUG
 LIBS           =
 

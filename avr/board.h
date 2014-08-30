@@ -20,8 +20,8 @@
 #define PIN_SCL         ( 1 << PC5 )        // I2C
 
 // Port D
-#define PIN_RXD         ( 1 << PD0 )        // PCINT16
-#define PIN_TXD         ( 1 << PD1 )        // PCINT17
+#define PIN_BB_SCL      ( 1 << PD0 )        // PCINT16
+#define PIN_BB_SDA      ( 1 << PD1 )        // PCINT17
 #define PIN_ENABLE      ( 1 << PD2 )        // PCINT18
 #define PIN_DETECT      ( 1 << PD3 )        // PCINT19
 #define PIN_PD4         ( 1 << PD4 )        // PCINT20

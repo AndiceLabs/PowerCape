@@ -12,6 +12,7 @@
 #include "eeprom.h"
 #include "registers.h"
 #include "twi_slave.h"
+#include "bb_i2c.h"
 
 
 extern volatile uint16_t system_ticks;

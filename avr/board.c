@@ -105,7 +105,7 @@ uint8_t board_3v3( void )
 
 void board_hold_reset( void )
 {
-    if ( registers_get( REG_BOARD_TYPE ) != BOARD_TYPE_PI )
+    if ( registers_get( REG_BOARD_TYPE ) == BOARD_TYPE_BONE )
     {
         PORTD &= ~PIN_DETECT;
         DDRD |= PIN_DETECT;
@@ -115,7 +115,7 @@ void board_hold_reset( void )
 
 void board_release_reset( void )
 {
-    if ( registers_get( REG_BOARD_TYPE ) != BOARD_TYPE_PI )
+    if ( registers_get( REG_BOARD_TYPE ) == BOARD_TYPE_BONE )
     {
         DDRD &= ~PIN_DETECT;
     }
@@ -192,17 +192,17 @@ void board_set_charge_current( uint8_t thirds )
 
 
 uint8_t wiper_value[ 11 ] = {
-    38,     // 0
-    38,     // 1
-    38,     // 2
-    38,     // 3 - 30k
-    51,     // 4 - 40k
-    64,     // 5 - 50k
-    76,     // 6 - 60k
-    89,     // 7 - 70k
-    102,    // 8 - 80k
-    114,    // 9 - 90k
-    127,    // 10 - 100k (max)
+    0,      // +0
+    13,     // +10k
+    26,     // +20k
+    38,     // +30k
+    51,     // +40k
+    64,     // +50k
+    76,     // +60k
+    89,     // +70k
+    102,    // +80k
+    114,    // +90k
+    127,    // +100k (max)
 };
 
 
@@ -215,7 +215,7 @@ void board_set_charge_timer( uint8_t hours )
         hours = 10;
     }
     
-    b = wiper_value[ hours ];
+    b = wiper_value[ hours - 3 ];
     if ( bb_i2c_write( MCP_ADDR, &b, 1 ) )
     {
         // REB TODO: indicate error
@@ -342,5 +342,4 @@ void board_stop( void )
     PCMSK0 = PCMSK1 = PCMSK2 = 0;
     DDRB = DDRC = DDRD = 0;
 }
-
 

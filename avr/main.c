@@ -280,14 +280,12 @@ int main( void )
     uint8_t oscval;
     uint16_t last_tick = 0;
     
-    // Make sure DIV8 is selected
-#if 0 // PI test: staying at 8MHz fixes bus timeouts
-    if ( CLKPR != 0x03 )    // Div8
+    // Make sure DIV8 is not selected
+    if ( CLKPR != 0 )    // Div1
     {
         CLKPR = ( 1 << CLKPCE );
-        CLKPR = 0x03;
+        CLKPR = 0;
     }
-#endif
     
     // Platform setup
     board_init();

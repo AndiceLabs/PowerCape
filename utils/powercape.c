@@ -202,13 +202,14 @@ int cape_write_rtc( void )
 
 void show_usage( char *progname )
 {
-    fprintf( stderr, "Usage: %s <mode> \n", progname );
-    fprintf( stderr, "   Mode (required):\n" );
+    fprintf( stderr, "Usage: %s [OPTION] \n", progname );
+    fprintf( stderr, "   Options:\n" );
     fprintf( stderr, "      -h --help           Show usage.\n" );
+    fprintf( stderr, "      -a --address <addr> Use I2C <addr> instead of 0x%02X.\n", AVR_ADDRESS );
     fprintf( stderr, "      -b --boot           Enter bootloader.\n" );
-    fprintf( stderr, "      -q --query <reason> Query if reason was cause of power-on.\n" );
-    fprintf( stderr, "                          <reason> can be TMO, PWR, BUT, or EXT.\n" );
-    fprintf( stderr, "      -r --read           Read cape RTC value.\n" );
+    fprintf( stderr, "      -q --query          Query reason for power-on.\n" );
+    fprintf( stderr, "                          Output can be TIMEOUT, PGOOD, BUTTON, or OPTO.\n" );
+    fprintf( stderr, "      -r --read           Read and display cape RTC value.\n" );
     fprintf( stderr, "      -s --set            Set system time from cape RTC.\n" );
     fprintf( stderr, "      -w --write          Write cape RTC from system time.\n" );
     exit( 1 );

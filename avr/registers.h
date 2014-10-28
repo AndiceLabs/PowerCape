@@ -59,7 +59,7 @@ enum registers_type {
 #define BOARD_TYPE_PI           0x01
 #define BOARD_TYPE_UNKNOWN      0xFF
 
-#if defined( powercape )
+#if defined( __AVR__ )
 void registers_init( void );
 inline void registers_set_mask( uint8_t index, uint8_t mask );
 inline void registers_clear_mask( uint8_t index, uint8_t mask );

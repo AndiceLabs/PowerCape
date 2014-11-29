@@ -64,6 +64,8 @@ uint8_t board_3v3( void );
 uint8_t board_pgood( void );
 void board_hold_reset( void );
 void board_release_reset( void );
+void board_set_charge_timer( uint8_t hours );
+void board_set_charge_current( uint8_t thirds );
 
 void board_enable_interrupt( uint8_t mask );
 void board_disable_interrupt( uint8_t mask );

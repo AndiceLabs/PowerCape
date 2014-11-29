@@ -176,18 +176,22 @@ void board_set_charge_current( uint8_t thirds )
 {
     uint8_t pins;
     
-    DDRC &= ~( PIN_ISET2 | PIN_ISET3 );
-    PORTC &= ~( PIN_ISET2 | PIN_ISET3 );
-    
-    switch ( thirds )
-    {
-        case 3:  pins = ( PIN_ISET2 | PIN_ISET3 ); break;
-        case 2:  pins = PIN_ISET2; break;
-        case 1:
-        default: pins = PIN_ISET3; break;
-        case 0:  pins = 0; break;
+    if ( ( registers_get( REG_BOARD_REV ) == 'A' ) &&
+         ( registers_get( REG_BOARD_STEP ) >= '2' ) )
+    {        
+        DDRC &= ~( PIN_ISET2 | PIN_ISET3 );
+        PORTC &= ~( PIN_ISET2 | PIN_ISET3 );
+        
+        switch ( thirds )
+        {
+            case 3:  pins = ( PIN_ISET2 | PIN_ISET3 ); break;
+            case 2:  pins = PIN_ISET2; break;
+            case 1:
+            default: pins = PIN_ISET3; break;
+            case 0:  pins = 0; break;
+        }
+        DDRC |= pins;
     }
-    DDRC |= pins;
 }
 
 
@@ -210,16 +214,20 @@ void board_set_charge_timer( uint8_t hours )
 {
     uint8_t b;
 
-    if ( hours > 10 ) 
-    {
-        hours = 10;
-    }
-    
-    b = wiper_value[ hours - 3 ];
-    if ( bb_i2c_write( MCP_ADDR, &b, 1 ) )
-    {
-        // REB TODO: indicate error
-        registers_set( REG_I2C_TCHARGE, 0xEE );
+    if ( ( registers_get( REG_BOARD_REV ) == 'A' ) &&
+         ( registers_get( REG_BOARD_STEP ) >= '2' ) )
+    {    
+        if ( hours > 10 ) 
+        {
+            hours = 10;
+        }
+        
+        b = wiper_value[ hours - 3 ];
+        if ( bb_i2c_write( MCP_ADDR, &b, 1 ) )
+        {
+            // indicate error
+            registers_set( REG_I2C_TCHARGE, 0xEE );
+        }
     }
 }
 

@@ -53,6 +53,25 @@ uint8_t registers_host_read( uint8_t index )
         {
             // Update pgood status
             board_pgood();
+            // Update button status
+            if ( PIND & PIN_BUTTON )
+            {
+                registers[ REG_STATUS ] &= ~STATUS_BUTTON;
+            }
+            else
+            {
+                registers[ REG_STATUS ] |= STATUS_BUTTON;
+            }
+            // Update opto status
+            if ( PINB & PIN_OPTO )
+            {
+                registers[ REG_STATUS ] &= ~STATUS_OPTO;
+            }
+            else
+            {
+                registers[ REG_STATUS ] |= STATUS_OPTO;
+            }
+                
             break;
         }
         case REG_SECONDS_0:
@@ -202,7 +221,7 @@ void registers_init( void )
     registers[ REG_RESTART_MINUTES ] = 0;
     registers[ REG_RESTART_SECONDS ] = 0;
     registers[ REG_EXTENDED ]        = 0x69;
-    registers[ REG_CAPABILITY ]      = CAPABILITY_CHARGE;
+    registers[ REG_CAPABILITY ]      = CAPABILITY_STATUS;
     registers[ REG_BOARD_TYPE ]      = eeprom_get_board_type();
     registers[ REG_BOARD_REV ]       = eeprom_get_revision_value();
     registers[ REG_BOARD_STEP ]      = eeprom_get_stepping_value();

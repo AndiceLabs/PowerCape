@@ -33,7 +33,9 @@ enum registers_type {
 
 
 // STATUS register bits
-#define STATUS_POWER_GOOD       0x01
+#define STATUS_POWER_GOOD       0x01    // PG state 
+#define STATUS_BUTTON           0x02    // Button state
+#define STATUS_OPTO             0x04    // Opto state
 
 // CONTROL register bits
 #define CONTROL_CE              0x01
@@ -53,6 +55,7 @@ enum registers_type {
 #define CAPABILITY_WDT          0x01    // Board type, revision level, and watchdog functionality
 #define CAPABILITY_ADDR         0x02    // Programmable I2C address
 #define CAPABILITY_CHARGE       0x03    // Programmable charge current and timer
+#define CAPABILITY_STATUS       0x04    // Current button and opto state in status register
 
 // Board types
 #define BOARD_TYPE_BONE         0x00

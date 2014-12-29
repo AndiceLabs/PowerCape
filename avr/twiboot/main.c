@@ -20,6 +20,7 @@
 #include <avr/interrupt.h>
 #include <avr/boot.h>
 #include <avr/pgmspace.h>
+#include <avr/wdt.h>
 #include <util/delay.h>
 
 /*
@@ -40,19 +41,19 @@
  */
 
 #if defined (__AVR_ATmega8__)
-#define VERSION_STRING		    "TWIBOOT v2.1a"
+#define VERSION_STRING		    "TWIBOOT v2.1b"
 #define SIGNATURE_BYTES		    0x1E, 0x93, 0x07
 
 #elif defined (__AVR_ATmega88P__)
-#define VERSION_STRING		    "TWIBOOT v2.1a"
+#define VERSION_STRING		    "TWIBOOT v2.1b"
 #define SIGNATURE_BYTES		    0x1E, 0x93, 0x0F
 
 #elif defined (__AVR_ATmega168P__)
-#define VERSION_STRING		    "TWIBOOT v2.1a"
+#define VERSION_STRING		    "TWIBOOT v2.1b"
 #define SIGNATURE_BYTES		    0x1E, 0x94, 0x0B
 
 #elif defined (__AVR_ATmega328P__)
-#define VERSION_STRING          "TWIBOOT v2.1a"
+#define VERSION_STRING          "TWIBOOT v2.1b"
 #define SIGNATURE_BYTES         0x1E, 0x95, 0x0F
 
 #else
@@ -171,6 +172,7 @@ static uint16_t addr;
 
 uint8_t flags;
 uint8_t run_app = 1;
+uint8_t mcusr __attribute__ ((section (".noinit")));
 
 
 static void board_power( void )
@@ -458,6 +460,7 @@ static void ( *jump_to_app )( void ) __attribute__( ( noreturn ) ) = 0x0000;
 void disable_wdt_timer( void ) __attribute__( ( naked, section( ".init3" ) ) );
 void disable_wdt_timer( void )
 {
+    mcusr = MCUSR;
     MCUSR = 0;
     WDTCSR = ( 1 << WDCE ) | ( 1 << WDE );
     WDTCSR = ( 0 << WDE );
@@ -479,7 +482,7 @@ int main( void )
     }
     else
     {
-        if ( flags & EE_FLAG_LOADER )
+        if ( mcusr & ( 1 << WDRF ) )
         {
             run_app = 0;
         }
@@ -544,6 +547,8 @@ int main( void )
 
         LED_OFF();
     }
-
+    
+    wdt_enable( WDTO_1S );
+    
     jump_to_app();
 }

@@ -290,7 +290,7 @@ int main( int argc, char *argv[] )
     handle = open( filename, O_RDWR );
     if ( handle < 0 ) 
     {
-        fprintf( stderr, "Error opening device: %s\n", strerror( errno ) );
+        fprintf( stderr, "Error opening device %s: %s\n", filename, strerror( errno ) );
         exit( 1 );
     }
 

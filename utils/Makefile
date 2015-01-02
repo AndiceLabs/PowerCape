@@ -1,8 +1,10 @@
 # Meant to be built on a BeagleBone (not cross-compiled)
 
-ina219:	ina219.c Makefile
+default: ina219 power
+
+ina219:	ina219.c
 	gcc -o ina219 ina219.c
 
-power:	powercape.c Makefile
+power:	powercape.c
 	gcc -o power powercape.c
 

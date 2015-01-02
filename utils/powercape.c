@@ -286,6 +286,8 @@ int main( int argc, char *argv[] )
     int rc = 0;
     char filename[ 20 ];
 
+    parse( argc, argv );
+
     snprintf( filename, 19, "/dev/i2c-%d", i2c_bus );
     handle = open( filename, O_RDWR );
     if ( handle < 0 ) 
@@ -299,8 +301,6 @@ int main( int argc, char *argv[] )
         fprintf( stderr, "IOCTL Error: %s\n", strerror( errno ) );
         exit( 1 );
     }
-
-    parse( argc, argv );
 
     switch ( operation )
     {

@@ -289,11 +289,11 @@ void show_voltage_current( void )
 
     if ( whole_numbers )
     {
-        printf( "%04.0fmV  %4.0fmA\n", mv, ma );
+        printf( "%4.0fmV  %4.0fmA\n", mv, ma );
     }
     else
     {
-        printf( "%04.0fmV  %04.1fmA\n", mv, ma );
+        printf( "%4.0fmV  %4.1fmA\n", mv, ma );
     }
 }
 

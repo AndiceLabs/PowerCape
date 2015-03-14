@@ -200,6 +200,27 @@ int cape_write_rtc( void )
 }
 
 
+int cape_query_reason_power_on( void )
+{
+    int rc = 1;
+    unsigned char reason;
+
+    if ( register_read( REG_START_REASON, &reason) == 0 )
+    {
+        switch ( reason ) {
+        case 1: printf("BUTTON\n"); break;
+        case 2: printf("OPTO\n"); break;
+        case 4: printf("PGOOD\n"); break;
+        case 8: printf("TIMEOUT\n"); break;
+        default: printf("CODE %d\n", reason); break;
+        }
+        rc = 0;
+    }
+
+    return rc;
+}
+
+
 void show_usage( char *progname )
 {
     fprintf( stderr, "Usage: %s [OPTION] \n", progname );
@@ -232,7 +253,7 @@ void parse( int argc, char *argv[] )
         };
         int c;
 
-        c = getopt_long( argc, argv, "hbq:rsw", lopts, NULL );
+        c = getopt_long( argc, argv, "hbqrsw", lopts, NULL );
 
         if( c == -1 )
             break;
@@ -248,7 +269,6 @@ void parse( int argc, char *argv[] )
             case 'q':
             {
                 operation = OP_QUERY;
-                //interval = atoi( optarg );
                 break;
             }
             
@@ -311,6 +331,7 @@ int main( int argc, char *argv[] )
     {
         case OP_QUERY:
         {
+            rc = cape_query_reason_power_on();
             break;
         }
 

@@ -23,7 +23,8 @@ typedef enum {
     OP_QUERY,
     OP_READ_RTC,
     OP_SET_SYSTIME,
-    OP_WRITE_RTC
+    OP_WRITE_RTC,
+    OP_INFO
 } op_type;
 
 op_type operation = OP_NONE;
@@ -200,12 +201,52 @@ int cape_write_rtc( void )
 }
 
 
+int cape_query_reason_power_on( void )
+{
+    int rc = 1;
+    unsigned char reason;
+
+    if ( register_read( REG_START_REASON, &reason) == 0 )
+    {
+        switch ( reason ) {
+        case 1: printf("BUTTON\n"); break;
+        case 2: printf("OPTO\n"); break;
+        case 4: printf("PGOOD\n"); break;
+        case 8: printf("TIMEOUT\n"); break;
+        default: printf("CODE %d\n", reason); break;
+        }
+        rc = 0;
+    }
+
+    return rc;
+}
+
+
+int cape_show_cape_info( void )
+{
+    int rc = 1;
+    unsigned char revision, stepping;
+
+    if ( register_read( REG_BOARD_REV, &revision ) == 0 && register_read( REG_BOARD_STEP, &stepping ) == 0 )
+    {
+        if ( revision <= 32 || revision >= 127 ) revision = '?';
+        if ( stepping <= 32 || stepping >= 127 ) stepping = '?';
+	printf("Hardware revision: %c, stepping: %c\n", revision, stepping);
+
+        rc = 0;
+    }
+
+    return rc;
+}
+
+
 void show_usage( char *progname )
 {
     fprintf( stderr, "Usage: %s [OPTION] \n", progname );
     fprintf( stderr, "   Options:\n" );
     fprintf( stderr, "      -h --help           Show usage.\n" );
     fprintf( stderr, "      -a --address <addr> Use I2C <addr> instead of 0x%02X.\n", AVR_ADDRESS );
+    fprintf( stderr, "      -i --info           Show PowerCape info.\n" );
     fprintf( stderr, "      -b --boot           Enter bootloader.\n" );
     fprintf( stderr, "      -q --query          Query reason for power-on.\n" );
     fprintf( stderr, "                          Output can be TIMEOUT, PGOOD, BUTTON, or OPTO.\n" );
@@ -224,6 +265,7 @@ void parse( int argc, char *argv[] )
         {
             { "help",       0, 0, 'h' },
             { "boot",       0, 0, 'b' },
+            { "info",       0, 0, 'i' },
             { "query",      0, 0, 'q' },
             { "read",       0, 0, 'r' },
             { "set",        0, 0, 's' },
@@ -232,7 +274,7 @@ void parse( int argc, char *argv[] )
         };
         int c;
 
-        c = getopt_long( argc, argv, "hbq:rsw", lopts, NULL );
+        c = getopt_long( argc, argv, "ihbqrsw", lopts, NULL );
 
         if( c == -1 )
             break;
@@ -245,10 +287,15 @@ void parse( int argc, char *argv[] )
                 break;
             }
 
+            case 'i':
+            {
+                operation = OP_INFO;
+                break;
+            }
+
             case 'q':
             {
                 operation = OP_QUERY;
-                //interval = atoi( optarg );
                 break;
             }
             
@@ -309,8 +356,15 @@ int main( int argc, char *argv[] )
 
     switch ( operation )
     {
+        case OP_INFO:
+        {
+            rc = cape_show_cape_info();
+            break;
+        }
+
         case OP_QUERY:
         {
+            rc = cape_query_reason_power_on();
             break;
         }
 

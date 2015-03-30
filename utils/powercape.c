@@ -171,7 +171,7 @@ int cape_read_rtc( time_t *iptr )
     if ( register32_read( REG_SECONDS_0, &seconds ) == 0 )
     {
         //printf( "Cape RTC seconds %08X (%d)\n", seconds, seconds );
-        printf( ctime( (time_t*)&seconds ) );
+        printf( "%s",ctime( (time_t*)&seconds ) );
         
         if ( iptr != NULL )
         {
@@ -190,7 +190,7 @@ int cape_write_rtc( void )
     unsigned int seconds = time( NULL );
     
     //printf( "System seconds %08X (%d)\n", seconds, seconds );
-    printf( ctime( (time_t*)&seconds ) );
+    printf( "%s",ctime( (time_t*)&seconds ) );
 
     if ( register32_write( REG_SECONDS_0, seconds ) == 0 )
     {

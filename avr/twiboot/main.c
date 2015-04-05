@@ -26,34 +26,34 @@
 /*
  * atmega88p:
  * Fuse E: 0x00 (1024 words bootloader)
- * Fuse H: 0xdf (BOD disabled)
+ * Fuse H: 0xd7 (BOD disabled)
  * Fuse L: 0xe2 (8Mhz internal RC-Osc.)
  *
  * atmega168p:
  * Fuse E: 0x00 (1024 words bootloader)
- * Fuse H: 0xdf (BOD disabled)
+ * Fuse H: 0xd7 (BOD disabled)
  * Fuse L: 0xe2 (8Mhz internal RC-Osc.)
  * 
  * atmega328p:
  * Fuse E: 0x07 (BOD disabled)
- * Fuse H: 0xda (1024 words bootloader)
+ * Fuse H: 0xd2 (1024 words bootloader)
  * Fuse L: 0xe2 (8Mhz internal RC-Osc.)
  */
 
 #if defined (__AVR_ATmega8__)
-#define VERSION_STRING		    "TWIBOOT v2.1b"
+#define VERSION_STRING		    "TWIBOOT v2.1c"
 #define SIGNATURE_BYTES		    0x1E, 0x93, 0x07
 
 #elif defined (__AVR_ATmega88P__)
-#define VERSION_STRING		    "TWIBOOT v2.1b"
+#define VERSION_STRING		    "TWIBOOT v2.1c"
 #define SIGNATURE_BYTES		    0x1E, 0x93, 0x0F
 
 #elif defined (__AVR_ATmega168P__)
-#define VERSION_STRING		    "TWIBOOT v2.1b"
+#define VERSION_STRING		    "TWIBOOT v2.1c"
 #define SIGNATURE_BYTES		    0x1E, 0x94, 0x0B
 
 #elif defined (__AVR_ATmega328P__)
-#define VERSION_STRING          "TWIBOOT v2.1b"
+#define VERSION_STRING          "TWIBOOT v2.1c"
 #define SIGNATURE_BYTES         0x1E, 0x95, 0x0F
 
 #else

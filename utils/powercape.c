@@ -224,19 +224,132 @@ int cape_query_reason_power_on( void )
 
 int cape_show_cape_info( void )
 {
-    int rc = 1;
-    unsigned char revision, stepping;
+    unsigned char c;
+    unsigned char c1, c2, c3, c4;
+    unsigned char revision, stepping, type;
+    char capability = -1;
 
-    if ( register_read( REG_BOARD_REV, &revision ) == 0 && register_read( REG_BOARD_STEP, &stepping ) == 0 )
+    if ( register_read(REG_EXTENDED, &c) == 0 && c == 0x69 )
     {
-        if ( revision <= 32 || revision >= 127 ) revision = '?';
-        if ( stepping <= 32 || stepping >= 127 ) stepping = '?';
-	printf("Hardware revision: %c, stepping: %c\n", revision, stepping);
-
-        rc = 0;
+        if ( register_read(REG_CAPABILITY, &capability) != 0 )
+	{
+	    capability = -1;
+	}
     }
 
-    return rc;
+    if ( register_read(REG_CONTROL, &c) == 0 )
+    {
+	if ( ! (c & CONTROL_CE) ) printf("Charger is not enabled!\n");
+	if ( c & CONTROL_BOOTLOAD ) printf("Bootloader is enabled!\n");
+	printf("LED 1 %s, LED 2 %s\n",
+		c & CONTROL_LED0 ? "on" : "off",
+		c & CONTROL_LED1 ? "on" : "off");
+    }
+
+    if ( register_read(REG_START_REASON, &c) == 0 )
+    {
+        printf("Powered on triggered by ");
+	if ( c & START_BUTTON ) printf("button press ");
+	if ( c & START_EXTERNAL ) printf("external event ");
+	if ( c & START_PWRGOOD ) printf("power good ");
+	if ( c & START_TIMEOUT ) printf("timer");
+        printf("\n");
+    }
+
+    if ( capability >= CAPABILITY_WDT )
+    {
+        if ( register_read( REG_BOARD_TYPE, &type) == 0 && 
+             register_read( REG_BOARD_REV, &revision ) == 0 && 
+             register_read( REG_BOARD_STEP, &stepping ) == 0 )
+        {
+            if ( revision <= 32 || revision >= 127 ) revision = '?';
+            if ( stepping <= 32 || stepping >= 127 ) stepping = '?';
+            printf("%s PowerCape %c%c\n", 
+		type == BOARD_TYPE_BONE ? "BeagleBone" : 
+		    type == BOARD_TYPE_PI ? "Raspberry Pi" : "Unknown", 
+		revision, 
+		stepping);
+        }
+
+        if ( register_read(REG_WDT_RESET, &c1) == 0 && 
+             register_read(REG_WDT_POWER, &c2) == 0 && 
+             register_read(REG_WDT_STOP, &c3) == 0 && 
+             register_read(REG_WDT_START, &c4) == 0 )
+        {
+            printf("Watchdog: power cycle @ %d, power down @ %d, start within @ %d, reset for %d\n", c2, c3, c4, c1);
+        }
+    }
+
+    if ( capability >= CAPABILITY_RTC ) 
+    {
+	unsigned int seconds;
+	if ( register32_read(REG_SECONDS_0, &seconds) == 0 )
+	{
+	    printf("RTC: %s", ctime((time_t*)&seconds));
+	}
+    }
+
+    if ( register_read(REG_START_ENABLE, &c) == 0 )
+    {
+        printf("Allow power on by ");
+	if ( c & START_BUTTON ) printf("button press; ");
+	if ( c & START_EXTERNAL ) printf("external event; ");
+	if ( c & START_PWRGOOD ) printf("power good signal; ");
+	if ( c & START_TIMEOUT ) 
+	{
+            unsigned char hours, minutes, seconds;
+            if ( register_read(REG_RESTART_HOURS , &hours) == 0 && 
+                 register_read(REG_RESTART_MINUTES , &minutes) == 0 && 
+                 register_read(REG_RESTART_SECONDS , &seconds) == 0 )
+            {
+                if ( seconds > 0 ) {
+                    printf("%d seconds power off", hours * 3600 + minutes * 60 + seconds);
+                }
+                else if ( minutes > 0 )
+                {
+                    printf("%d minutes power off", hours * 60 + minutes);
+                }
+                else
+                {
+                    printf("%d hours power off", hours);
+                }
+            }
+
+        }
+	printf("\n");
+    }
+
+    if ( register_read(REG_STATUS, &c) == 0 )
+    {
+	if ( c & STATUS_BUTTON ) printf("Button PRESSED\n");
+	if ( c & STATUS_OPTO ) printf("Opto ACTIVE\n");
+	// if ( c & STATUS_POWER_GOOD ) printf("Power good\n");
+    }
+
+    if ( capability >= CAPABILITY_ADDR )
+    {
+        if ( register_read(REG_I2C_ADDRESS, &c) == 0 )
+        {
+            printf("AVR I2C address: 0x%02x\n", c);
+        }
+    }
+
+    // if ( register_read(REG_MCUSR, &c1) == 0 && 
+    //      register_read(REG_OSCCAL, &c2) == 0 )
+    // {
+    //     printf("AVR MCURS: 0x%02x, OSCCAL: 0x%02x\n", c1, c2);
+    // }
+
+    if ( capability >= CAPABILITY_CHARGE && (revision == 'A' && stepping >= '2' || revision > 'A') )
+    {
+        if ( register_read(REG_I2C_ICHARGE, &c1) == 0 && register_read(REG_I2C_TCHARGE, &c2) == 0 )
+        {
+	    printf("Charge current: %d mA\n", c1 * 1000 / 3);
+	    printf("Charge timer: %d hours\n", c2);
+        }
+    }
+
+    return 0;
 }
 
 

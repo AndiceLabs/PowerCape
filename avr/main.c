@@ -288,9 +288,9 @@ int main( void )
     }
     
     // Platform setup
-    board_init();
     registers_init();
     registers_set( REG_MCUSR, mcusr );
+    board_init();
     
     oscval = eeprom_get_calibration_value();
     if ( oscval != 0xFF )

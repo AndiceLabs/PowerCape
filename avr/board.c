@@ -86,13 +86,27 @@ void board_led_off( uint8_t led )
 
 void board_ce( uint8_t enable )
 {
-    if ( enable )
+    if ( registers_get( REG_BOARD_TYPE ) == BOARD_TYPE_SOLAR )
     {
-        DDRC &= ~PIN_CE;
+        if ( enable )
+        {
+            PORTC &= ~PIN_CE;
+        }
+        else
+        {
+            PORTC |= PIN_CE;
+        }
     }
     else
     {
-        DDRC |= PIN_CE;
+        if ( enable )
+        {
+            DDRC &= ~PIN_CE;
+        }
+        else
+        {
+            DDRC |= PIN_CE;
+        }
     }
 }
 
@@ -126,14 +140,17 @@ uint8_t board_pgood( void )
 {
     uint8_t rc = 0;
     
-    if ( PINC & PIN_PGOOD )
+    if ( registers_get( REG_BOARD_TYPE ) != BOARD_TYPE_SOLAR )
     {
-        registers_clear_mask( REG_STATUS, STATUS_POWER_GOOD );
-    }
-    else
-    {
-        registers_set_mask( REG_STATUS, STATUS_POWER_GOOD );
-        rc = 1;
+        if ( PINC & PIN_PGOOD )
+        {
+            registers_clear_mask( REG_STATUS, STATUS_POWER_GOOD );
+        }
+        else
+        {
+            registers_set_mask( REG_STATUS, STATUS_POWER_GOOD );
+            rc = 1;
+        }
     }
     
     return rc;
@@ -240,7 +257,14 @@ void board_gpio_config( void )
     DDRB  = ( PIN_LED1 | PIN_LED0 );
 
     PORTC  = ~( PIN_SDA | PIN_SCL | PIN_CE | PIN_ISET2 | PIN_ISET3 );
-    DDRC   = PIN_ISET3;
+    if ( registers_get( REG_BOARD_TYPE ) != BOARD_TYPE_SOLAR )
+    {
+        DDRC   = PIN_ISET3;
+    }
+    else
+    {
+        DDRC   = ( PIN_CE | PIN_ISET3 );
+    }
 
     PORTD = ~( PIN_CP | PIN_D | PIN_DETECT | PIN_BB_SCL | PIN_BB_SDA );
     DDRD  = ( PIN_CP | PIN_D );

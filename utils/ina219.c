@@ -22,6 +22,9 @@
 #define AVR_ADDRESS         0x21
 #define INA_ADDRESS         0x40
 
+#define DEVICE_INA219       0
+#define DEVICE_INA3221      1
+
 typedef enum {
     OP_DUMP,
     OP_VOLTAGE,
@@ -32,6 +35,7 @@ typedef enum {
 
 op_type operation = OP_DUMP;
 
+int device = DEVICE_INA219;
 int interval = 60;
 int i2c_bus = 1;
 int i2c_address = INA_ADDRESS;
@@ -115,6 +119,7 @@ void show_usage( char *progname )
     fprintf( stderr, "Usage: %s <mode> \n", progname );
     fprintf( stderr, "   Mode (required):\n" );
     fprintf( stderr, "      -h --help           Show usage.\n" );
+    fprintf( stderr, "      -3 --ina3221        Triple channel INA3221.\n" );
     fprintf( stderr, "      -i --interval       Set interval for monitor mode.\n" );
     fprintf( stderr, "      -w --whole          Show whole numbers only. Useful for scripts.\n" );
     fprintf( stderr, "      -v --voltage        Show battery voltage in mV.\n" );
@@ -131,6 +136,7 @@ void parse( int argc, char *argv[] )
     {
         static const struct option lopts[] =
         {
+            { "ina3221",    0, 0, '3' },
             { "address",    0, 0, 'a' },
             { "bus",        0, 0, 'b' },
             { "current",    0, 0, 'c' },
@@ -142,13 +148,18 @@ void parse( int argc, char *argv[] )
         };
         int c;
 
-        c = getopt_long( argc, argv, "a:b:chi:vw", lopts, NULL );
+        c = getopt_long( argc, argv, "3a:b:chi:vw", lopts, NULL );
 
         if( c == -1 )
             break;
 
         switch( c )
         {
+            case '3':
+            {
+                device = DEVICE_INA3221;
+                break;
+            }
             case 'a':
             {
                 errno = 0;
@@ -215,85 +226,123 @@ void parse( int argc, char *argv[] )
 }
 
 
-int get_voltage( float *mv )
+int get_voltage( int channel, float *mv )
 {
     short bus;
 
-    if ( register_read( BUS_REG, (unsigned short*)&bus ) != 0 )
+    if ( register_read( BUS_REG + ( channel << 1 ), (unsigned short*)&bus ) != 0 )
     {
         return -1;
     }
 
-    *mv = ( float )( ( bus & 0xFFF8 ) >> 1 );
+    if ( device == DEVICE_INA219 )
+    {
+        *mv = ( float )( ( bus & 0xFFF8 ) >> 1 );
+    } 
+    else 
+    {
+        *mv = ( float )( bus & 0xFFF8 );
+    }
     return 0;
 }
 
 
-int get_current( float *ma )
+int get_current( int channel, float *ma )
 {
     short shunt;
 
-    if ( register_read( SHUNT_REG, &shunt ) != 0 )
+    if ( register_read( SHUNT_REG + ( channel << 1 ), &shunt ) != 0 )
     {
         return -1;
     }
 
-    *ma = (float)shunt / 10;
+    if ( device == DEVICE_INA219 )
+    {
+        *ma = (float)shunt / 10;
+    }
+    else
+    {
+        *ma = (float)shunt / 4;
+    }
     return 0;
 }
 
 
-void show_current( void )
+void show_current( void  )
 {
+    int channels = 1;
+    int i;
     float ma;
 
-    if ( get_current( &ma ) )
+    if ( device == DEVICE_INA3221 )
+        channels = 3;
+
+    for ( i = 0; i < channels; i++ )
     {
-        fprintf( stderr, "Error reading current\n" );
-        return;
-    }
-    
-    if ( whole_numbers )
-    {
-        printf( "%4.0f\n", ma );
-    }
-    else
-    {
-        printf( "%04.1f\n", ma );
+        if ( get_current( i, &ma ) )
+        {
+            fprintf( stderr, "Error reading current\n" );
+            return;
+        }
+        
+        if ( whole_numbers )
+        {
+            printf( "%4.0f\n", ma );
+        }
+        else
+        {
+            printf( "%04.1f\n", ma );
+        }
     }
 }
 
 
 void show_voltage( void )
 {
+    int channels = 1;
+    int i;
     float mv;
 
-    if ( get_voltage( &mv ) )
+    if ( device == DEVICE_INA3221 )
+        channels = 3;
+
+    for ( i = 0; i < channels; i++ )
     {
-        fprintf( stderr, "Error reading voltage\n" );
-        return;
+        if ( get_voltage( i, &mv ) )
+        {
+            fprintf( stderr, "Error reading voltage\n" );
+            return;
+        }
+        printf( "%4.0f\n", mv );
     }
-    printf( "%4.0f\n", mv );
 }
 
 
 void show_voltage_current( void )
 {
+    int channels = 1;
+    int i;
     float mv, ma;
 
-    if ( get_current( &ma ) || get_voltage( &mv ) )
+    if ( device == DEVICE_INA3221 )
+        channels = 3;
+    
+    for ( i = 0; i < channels; i++ )
     {
-        fprintf( stderr, "Error reading voltage/current\n" );
-        return;
-    }
+        if ( get_current( i, &ma ) || get_voltage( i, &mv ) )
+        {
+            fprintf( stderr, "Error reading voltage/current\n" );
+            return;
+        }
 
-    if ( whole_numbers )
-    {
-        printf( "%4.0fmV  %4.0fmA\n", mv, ma );
-    }
-    else
-    {
-        printf( "%4.0fmV  %4.1fmA\n", mv, ma );
+        if ( whole_numbers )
+        {
+            printf( "%4.0fmV  %4.0fmA\n", mv, ma );
+        }
+        else
+        {
+            printf( "%4.0fmV  %4.1fmA\n", mv, ma );
+        }
     }
 }
 

@@ -24,8 +24,17 @@ ISP_FLAGS      = -p m328p -c avrisp2
 
 all: $(PRG).elf lst text
 
-program: $(PRG).hex
+combined.hex: $(PRG).hex
+	srec_cat $(PRG).hex -intel -offset 0 twiboot/twiboot.hex -intel -offset 0x7800 -o combined.srec
+
+full: eeprom fuses combined.srec
+	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -e -U flash:w:combined.srec:s
+
+program: fuses eeprom $(PRG).hex
 	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -e -U flash:w:$(PRG).hex:i
+
+eeprom: 
+	$(ISP_PROG) $(ISP_FLAGS) -P $(ISP_PORT) -U eeprom:w:0xff,0xff,0x02,0x50,0x30:m
 
 fuses:
 # External crystal oscillator, max start-up time

@@ -50,7 +50,7 @@ enum registers_type {
 #define START_TIMEOUT           0x08
 #define START_ALL               0x0F
 
-// CAPABILITY levels
+// CAPABILITY levels (firmware revision)
 #define CAPABILITY_RTC          0x00    // The presence of the "extended" register alone indicates RTC
 #define CAPABILITY_WDT          0x01    // Board type, revision level, and watchdog functionality
 #define CAPABILITY_ADDR         0x02    // Programmable I2C address
@@ -60,6 +60,7 @@ enum registers_type {
 // Board types
 #define BOARD_TYPE_BONE         0x00
 #define BOARD_TYPE_PI           0x01
+#define BOARD_TYPE_SOLAR        0x02
 #define BOARD_TYPE_UNKNOWN      0xFF
 
 #if defined( __AVR__ )

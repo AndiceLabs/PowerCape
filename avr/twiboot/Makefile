@@ -67,6 +67,9 @@ bin:  $(PRG).bin
 
 program: text
 	avrdude -c avrisp2 -P usb -p $(AVRDUDE_MCU) -U lfuse:w:$(LFUSE):m -U hfuse:w:$(HFUSE):m -U efuse:w:$(EFUSE):m
+	avrdude -c avrisp2 -P usb -p $(AVRDUDE_MCU) -U eeprom:w:0xff,0xff,0x00,0x41,0x31:m
+#	avrdude -c avrisp2 -P usb -p $(AVRDUDE_MCU) -U eeprom:w:0xff,0xff,0x01,0x41,0x32:m
+#	avrdude -c avrisp2 -P usb -p $(AVRDUDE_MCU) -U eeprom:w:0xff,0xff,0x02,0x42,0x30:m
 	avrdude -c avrisp2 -P usb -p $(AVRDUDE_MCU) -U flash:w:$(PRG).hex
 
 #fuses:

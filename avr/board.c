@@ -140,6 +140,14 @@ uint8_t board_pgood( void )
 }
 
 
+void board_enable_pgood_irq( void )
+{
+    // Enable PGOOD interrupt
+    PCMSK1 |= ( PIN_PGOOD );
+    PCICR  |= ( 1 << PCIE1 );    
+}
+
+
 void board_enable_interrupt( uint8_t mask )
 {
     if ( mask & START_EXTERNAL )
@@ -244,6 +252,8 @@ void board_gpio_config( void )
 
     PORTD = ~( PIN_CP | PIN_D | PIN_DETECT | PIN_BB_SCL | PIN_BB_SDA );
     DDRD  = ( PIN_CP | PIN_D );
+    
+    board_enable_pgood_irq();   
 }
 
 
@@ -259,18 +269,15 @@ ISR( PCINT0_vect, ISR_BLOCK )
 }
 
 
-// Power Good
-#if 0
+// Power Good oscillation fix
 ISR( PCINT1_vect, ISR_BLOCK )
 {
-    PCMSK1 &= ~PIN_PGOOD; 
-
     if ( ( PINC & PIN_PGOOD ) == 0 )
     {
-        power_event( START_PWRGOOD );
+        PCMSK1 &= ~PIN_PGOOD;
+        board_ce( 0 );
     }
 }
-#endif
 
 
 // Button

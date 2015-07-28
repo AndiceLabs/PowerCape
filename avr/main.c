@@ -275,6 +275,17 @@ void state_machine( void )
 }
 
 
+// If requested, make sure CE is set. Can be disabled by ISR.
+void check_charge_enable( void )
+{
+    if ( registers_get( REG_CONTROL ) & CONTROL_CE )
+    {
+        board_ce( 1 );
+        board_enable_pgood_irq(); 
+    }
+}
+
+
 int main( void )
 {
     uint8_t oscval;
@@ -323,6 +334,8 @@ int main( void )
             {
                 watchdog_check();                
             }
+            
+            check_charge_enable();
         }
         
         // Bootloader entry

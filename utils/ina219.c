@@ -356,7 +356,7 @@ void monitor( void )
     {
         seconds = time( NULL );
         tmptr = localtime( &seconds );
-        printf( "%02d:%02d ", tmptr->tm_hour, tmptr->tm_min );
+        printf( "%2d:%02d:%02d ", tmptr->tm_hour, tmptr->tm_min, tmptr->tm_sec );
         show_voltage_current();
         sleep( interval );
     }

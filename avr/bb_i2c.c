@@ -7,12 +7,38 @@
 
 #define BANG_DELAY  16
 
-#define SCL_LOW     DDRD |= PIN_BB_SCL
-#define SCL_HIGH    DDRD &= ~PIN_BB_SCL
-#define SDA_LOW     DDRD |= PIN_BB_SDA
-#define SDA_HIGH    DDRD &= ~PIN_BB_SDA
+#if 0
+#define SCL_LOW     ( *scl_ddr |= scl_mask )
+#define SCL_HIGH    ( *scl_ddr &= ~scl_mask )
+#define SDA_LOW     ( *sda_ddr |= sda_mask )
+#define SDA_HIGH    ( *sda_ddr &= ~sda_mask )
+
+volatile uint8_t *scl_ddr;
+uint8_t  scl_mask;
+volatile uint8_t *sda_ddr;
+uint8_t  sda_mask;
+#else
+#define SCL_LOW     ( DDRC |= PIN_SCL )
+#define SCL_HIGH    ( DDRC &= ~PIN_SCL )
+#define SDA_LOW     ( DDRC |= PIN_SDA )
+#define SDA_HIGH    ( DDRC &= ~PIN_SDA )
+#endif
 
 #define NOP         asm volatile( "nop\n\t" )
+
+
+
+/* Going to need external pull-ups to use GPIO in open-collector mode */
+void bb_i2c_init( void )
+{
+    // Set pins to tri-state
+    DDRC &= ~PIN_SCL;
+    DDRC &= ~PIN_SDA;
+    
+    // Pre-set output to low (this also disables the internal pull-up)
+    PORTC &= ~PIN_SCL;
+    PORTC &= ~PIN_SDA;
+}
 
 
 static inline void delay_loop( void )
@@ -37,25 +63,13 @@ static inline void delay_loop2( void )
 }
 
 
-/* Going to need external pull-ups to use GPIO in open-collector mode */
-void bb_i2c_init( void )
-{
-    // Set pins to tri-state
-    DDRD &= ~PIN_BB_SCL;
-    DDRD &= ~PIN_BB_SDA;
-    
-    // Pre-set output to low (this also disables the internal pull-up)
-    PORTD &= ~PIN_BB_SCL;
-    PORTD &= ~PIN_BB_SDA;
-}
-
-
 void bb_start( void )
 {
     // Idle bus == both lines high
     SDA_LOW;
     delay_loop();
     SCL_LOW;    
+    delay_loop();
 }
 
 
@@ -87,6 +101,7 @@ void bb_out( uint8_t b )
         delay_loop();
         SCL_LOW;
         b <<= 1;
+        delay_loop();
     }
     // Release SDA
     SDA_HIGH;
@@ -103,7 +118,7 @@ uint8_t bb_in( void )
         delay_loop2();
         SCL_HIGH;
         delay_loop2();
-        if ( PIND & PIN_BB_SDA )
+        if ( PINC & PIN_SDA )
         {
             b |= 0x01;
         }
@@ -126,7 +141,7 @@ uint8_t get_ack( void )
     SDA_HIGH;
     SCL_HIGH;
     delay_loop2();
-    i = ~( PIND & PIN_BB_SDA );
+    i = ~( PINC & PIN_SDA );
     delay_loop2();
     SCL_LOW;
     

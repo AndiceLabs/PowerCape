@@ -122,8 +122,8 @@ void show_usage( char *progname )
     fprintf( stderr, "      -3 --ina3221        Triple channel INA3221.\n" );
     fprintf( stderr, "      -i --interval       Set interval for monitor mode.\n" );
     fprintf( stderr, "      -w --whole          Show whole numbers only. Useful for scripts.\n" );
-    fprintf( stderr, "      -v --voltage        Show battery voltage in mV.\n" );
-    fprintf( stderr, "      -c --current        Show battery current in mA.\n" );
+    fprintf( stderr, "      -v --voltage        Show channel voltage in mV.\n" );
+    fprintf( stderr, "      -c --current        Show channel current in mA.\n" );
     fprintf( stderr, "      -a --address <addr> Override I2C address of INA219 from default of 0x%02X.\n", i2c_address );
     fprintf( stderr, "      -b --bus <i2c bus>  Override I2C bus from default of %d.\n", i2c_bus );
     exit( 1 );

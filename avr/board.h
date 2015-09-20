@@ -50,6 +50,7 @@ __asm__ __volatile__ (  \
 void timer0_init( void );
 void timer1_init( void );
 
+uint8_t board_type( void );
 uint8_t board_begin_countdown( void );
 
 void board_power_on( void );

@@ -6,6 +6,7 @@
 #include "registers.h"
 #include "bb_i2c.h"
 #include "board.h"
+#include "ina3221.h"
 
 
 extern void power_down( void );
@@ -14,6 +15,12 @@ extern void power_event( uint8_t reason );
 volatile uint16_t system_ticks;
 volatile uint32_t countdown;
 volatile uint32_t seconds;
+
+
+uint8_t board_type( void )
+{
+    return ( registers_get( REG_BOARD_TYPE ) );
+}
 
 
 uint8_t board_begin_countdown( void )
@@ -152,6 +159,14 @@ uint8_t board_pgood( void )
             rc = 1;
         }
     }
+    else
+    {
+        // We need to ask the 3221
+        if ( ina3221_voltage( INA_CHAN_SOLAR ) > 15000 )
+        {
+            rc = 1;
+        }
+    }
     
     return rc;
 }
@@ -159,9 +174,12 @@ uint8_t board_pgood( void )
 
 void board_enable_pgood_irq( void )
 {
-    // Enable PGOOD interrupt
-    PCMSK1 |= ( PIN_PGOOD );
-    PCICR  |= ( 1 << PCIE1 );    
+    if ( registers_get( REG_BOARD_TYPE ) != BOARD_TYPE_SOLAR )
+    {
+        // Enable PGOOD interrupt
+        PCMSK1 |= ( PIN_PGOOD );
+        PCICR  |= ( 1 << PCIE1 );
+    }
 }
 
 
@@ -201,21 +219,24 @@ void board_set_charge_current( uint8_t thirds )
 {
     uint8_t pins;
     
-    if ( ( registers_get( REG_BOARD_REV ) == 'A' ) &&
-         ( registers_get( REG_BOARD_STEP ) >= '2' ) )
-    {        
-        DDRC &= ~( PIN_ISET2 | PIN_ISET3 );
-        PORTC &= ~( PIN_ISET2 | PIN_ISET3 );
-        
-        switch ( thirds )
-        {
-            case 3:  pins = ( PIN_ISET2 | PIN_ISET3 ); break;
-            case 2:  pins = PIN_ISET2; break;
-            case 1:
-            default: pins = PIN_ISET3; break;
-            case 0:  pins = 0; break;
+    if ( registers_get( REG_BOARD_TYPE ) != BOARD_TYPE_SOLAR )
+    {
+        if ( ( registers_get( REG_BOARD_REV ) == 'A' ) &&
+            ( registers_get( REG_BOARD_STEP ) >= '2' ) )
+        {        
+            DDRC &= ~( PIN_ISET2 | PIN_ISET3 );
+            PORTC &= ~( PIN_ISET2 | PIN_ISET3 );
+            
+            switch ( thirds )
+            {
+                case 3:  pins = ( PIN_ISET2 | PIN_ISET3 ); break;
+                case 2:  pins = PIN_ISET2; break;
+                case 1:
+                default: pins = PIN_ISET3; break;
+                case 0:  pins = 0; break;
+            }
+            DDRC |= pins;
         }
-        DDRC |= pins;
     }
 }
 
@@ -239,19 +260,22 @@ void board_set_charge_timer( uint8_t hours )
 {
     uint8_t b;
 
-    if ( ( registers_get( REG_BOARD_REV ) == 'A' ) &&
-         ( registers_get( REG_BOARD_STEP ) >= '2' ) )
-    {    
-        if ( hours > 10 ) 
-        {
-            hours = 10;
-        }
-        
-        b = wiper_value[ hours - 3 ];
-        if ( bb_i2c_write( MCP_ADDR, &b, 1 ) )
-        {
-            // indicate error
-            registers_set( REG_I2C_TCHARGE, 0xEE );
+    if ( registers_get( REG_BOARD_TYPE ) != BOARD_TYPE_SOLAR )
+    {
+        if ( ( registers_get( REG_BOARD_REV ) == 'A' ) &&
+            ( registers_get( REG_BOARD_STEP ) >= '2' ) )
+        {    
+            if ( hours > 10 ) 
+            {
+                hours = 10;
+            }
+            
+            b = wiper_value[ hours - 3 ];
+            if ( bb_i2c_write( MCP_ADDR, &b, 1 ) )
+            {
+                // indicate error
+                registers_set( REG_I2C_TCHARGE, 0xEE );
+            }
         }
     }
 }
@@ -369,7 +393,12 @@ void board_init( void )
     board_gpio_config();
     PRR = ( ( 1 << PRTIM0 ) | ( 1 << PRTIM1 ) | ( 1 << PRSPI ) | ( 1 << PRUSART0 ) | ( 1 << PRADC ) );
     timer2_init();
-    bb_i2c_init();
+    
+    // Solar Cape doesn't have a separate I2C slave bus
+    if ( board_type() != BOARD_TYPE_SOLAR )
+    {
+        bb_i2c_init();
+    }
 }
 
 

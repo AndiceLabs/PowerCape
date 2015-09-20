@@ -167,6 +167,11 @@ void state_machine( void )
             }
             
             registers_clear_mask( REG_START_REASON, 0xFF );
+            
+            if ( board_type() == BOARD_TYPE_SOLAR )
+            {
+                bb_i2c_init();
+            }
 
             break;
         }

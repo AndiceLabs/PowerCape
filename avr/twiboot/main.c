@@ -23,6 +23,9 @@
 #include <avr/wdt.h>
 #include <util/delay.h>
 
+#define FALSE   0
+#define TRUE    1
+
 /*
  * atmega88p:
  * Fuse E: 0x00 (1024 words bootloader)
@@ -41,19 +44,19 @@
  */
 
 #if defined (__AVR_ATmega8__)
-#define VERSION_STRING		    "TWIBOOT v2.1c"
+#define VERSION_STRING		    "TWIBOOT v2.1d"
 #define SIGNATURE_BYTES		    0x1E, 0x93, 0x07
 
 #elif defined (__AVR_ATmega88P__)
-#define VERSION_STRING		    "TWIBOOT v2.1c"
+#define VERSION_STRING		    "TWIBOOT v2.1d"
 #define SIGNATURE_BYTES		    0x1E, 0x93, 0x0F
 
 #elif defined (__AVR_ATmega168P__)
-#define VERSION_STRING		    "TWIBOOT v2.1c"
+#define VERSION_STRING		    "TWIBOOT v2.1d"
 #define SIGNATURE_BYTES		    0x1E, 0x94, 0x0B
 
 #elif defined (__AVR_ATmega328P__)
-#define VERSION_STRING          "TWIBOOT v2.1c"
+#define VERSION_STRING          "TWIBOOT v2.1d"
 #define SIGNATURE_BYTES         0x1E, 0x95, 0x0F
 
 #else
@@ -170,12 +173,28 @@ volatile static uint8_t cmd = CMD_WAIT;
 static uint8_t buf[ SPM_PAGESIZE ];
 static uint16_t addr;
 
-uint8_t flags;
+uint8_t no_activity = 1;
 uint8_t run_app = 1;
 uint8_t mcusr __attribute__ ((section (".noinit")));
 
 
-static void board_power( void )
+void timer2_init( uint8_t enable )
+{
+    PRR &= ~( 1 << PRTIM2 );    // is this necessary with async mode?
+    ASSR = ( 1 << AS2 );        // external crystal
+    TCCR2B = 0;
+    TCCR2A = 0;
+    TCNT2 = 0;
+    TIFR2 = TIFR2;              // clear any flags
+    
+    if ( enable != 0 )
+    {
+        TCCR2B = ( 1 << CS22 ) | ( 1 << CS21 ) | ( 1 << CS20 );    // clk/1024 (8s)
+    }
+}
+
+
+void board_power( void )
 {
     PORTD |= PIN_D;
     asm volatile( "nop\n\t" );
@@ -184,6 +203,7 @@ static void board_power( void )
     PORTD &= ~PIN_CP;
     PORTD &= ~PIN_D;
 }
+
 
 static void write_flash_page( void )
 {
@@ -223,6 +243,7 @@ static uint8_t read_eeprom_byte( void )
     return EEDR;
 }
 
+
 static void write_eeprom_byte( uint8_t val )
 {
     EEARL = addr;
@@ -240,6 +261,7 @@ static void write_eeprom_byte( uint8_t val )
 }
 #endif /* EEPROM_SUPPORT */
 
+
 ISR( TWI_vect )
 {
     static uint8_t bcnt;
@@ -251,6 +273,11 @@ ISR( TWI_vect )
     {
             /* SLA+W received, ACK returned -> receive data and ACK */
         case 0x60:
+            if ( no_activity )
+            {
+                timer2_init( FALSE );
+                no_activity = 0;
+            }
             bcnt = 0;
             LED_RT_ON();
             TWCR |= ( 1 << TWINT ) | ( 1 << TWEA );
@@ -388,9 +415,15 @@ ISR( TWI_vect )
 
             /* SLA+R received, ACK returned -> send data */
         case 0xA8:
+            if ( no_activity )
+            {
+                timer2_init( FALSE );
+                no_activity = 0;
+            }
             bcnt = 0;
             LED_RT_ON();
-
+            // intentional fall-thru
+            
             /* prev. SLA+R, data sent, ACK returned -> send data */
         case 0xB8:
 
@@ -471,19 +504,17 @@ void disable_wdt_timer( void )
 int main( void ) __attribute__( ( noreturn ) );
 int main( void )
 {
-    uint8_t i;
-
-    flags = eeprom_read_byte( EEPROM_FLAGS );
-
     /* Bootloader or application code? */
     if ( pgm_read_word_near( 0 ) == 0xFFFF)
     {
+        timer2_init( FALSE );
         run_app = 0;
     }
     else
     {
         if ( mcusr & ( 1 << WDRF ) )
         {
+            timer2_init( TRUE );
             run_app = 0;
         }
     }
@@ -517,9 +548,11 @@ int main( void )
 
         sei();
 
-        while( cmd != CMD_BOOT_APPLICATION );
+        while( ( cmd != CMD_BOOT_APPLICATION )&& ( TIFR2 == 0 ) );
 
         cli();
+        
+        timer2_init( FALSE );
 
         /* Disable TWI but keep address! */
         TWCR = 0x00;
@@ -539,11 +572,6 @@ int main( void )
         MCUCR = ( 1 << IVCE );
         MCUCR = ( 0 << IVSEL );
 #endif
-
-        i = eeprom_read_byte( EEPROM_FLAGS );
-        i &= ~EE_FLAG_LOADER;
-        eeprom_write_byte( EEPROM_FLAGS, i );
-        eeprom_busy_wait();
 
         LED_OFF();
     }

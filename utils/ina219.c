@@ -12,18 +12,25 @@
 #include <fcntl.h>
 #include <linux/i2c-dev.h>
 
-#define CONFIG_REG          0
-#define SHUNT_REG           1
-#define BUS_REG             2
-#define POWER_REG           3
-#define CURRENT_REG         4
-#define CALIBRATION_REG     5
+#define REG_CONFIG          0
+#define REG_SHUNT           1
+#define REG_BUS             2
+#define REG_POWER           3
+#define REG_CURRENT         4
+#define REG_CALIBRATION     5
+#define REG_MFG_ID          0xFE
+#define REG_DIE_ID          0xFF
 
 #define AVR_ADDRESS         0x21
 #define INA_ADDRESS         0x40
 
-#define DEVICE_INA219       0
-#define DEVICE_INA3221      1
+typedef enum {
+    CHIP_UNKNOWN,
+    CHIP_INA219,
+    CHIP_INA3221
+} chip_type;
+
+chip_type device = CHIP_UNKNOWN;
 
 typedef enum {
     OP_DUMP,
@@ -35,7 +42,7 @@ typedef enum {
 
 op_type operation = OP_DUMP;
 
-int device = DEVICE_INA219;
+int channel = 0;
 int interval = 60;
 int i2c_bus = 1;
 int i2c_address = INA_ADDRESS;
@@ -114,17 +121,50 @@ int register_write( unsigned char reg, unsigned short data )
 }
 
 
+chip_type chip_identify( void )
+{
+    int rc = -1;
+    unsigned short reg;
+    
+    if ( register_read( REG_MFG_ID, &reg ) == 0 )
+    {
+        if ( reg == 0x5449 )
+        {
+            if ( register_read( REG_DIE_ID, &reg ) == 0 )
+            {
+                if ( reg == 0x3220 )
+                {
+                    rc = CHIP_INA3221;
+                }
+            }
+            else
+            {
+                rc = CHIP_UNKNOWN;
+            }
+        }
+        else
+        {
+            rc = CHIP_INA219;
+        }
+    }
+    
+    return rc;
+}
+
+
 void show_usage( char *progname )
 {
     fprintf( stderr, "Usage: %s <mode> \n", progname );
     fprintf( stderr, "   Mode (required):\n" );
     fprintf( stderr, "      -h --help           Show usage.\n" );
-    fprintf( stderr, "      -3 --ina3221        Triple channel INA3221.\n" );
+    fprintf( stderr, "      -1 --battery        Battery channel on Solar Cape.\n" );
+    fprintf( stderr, "      -2 --solar          Solar channel on Solar Cape.\n" );
+    fprintf( stderr, "      -3 --system         System channel on Solar Cape.\n" );
     fprintf( stderr, "      -i --interval       Set interval for monitor mode.\n" );
     fprintf( stderr, "      -w --whole          Show whole numbers only. Useful for scripts.\n" );
     fprintf( stderr, "      -v --voltage        Show channel voltage in mV.\n" );
     fprintf( stderr, "      -c --current        Show channel current in mA.\n" );
-    fprintf( stderr, "      -a --address <addr> Override I2C address of INA219 from default of 0x%02X.\n", i2c_address );
+    fprintf( stderr, "      -a --address <addr> Override I2C address of power monitor from default of 0x%02X.\n", i2c_address );
     fprintf( stderr, "      -b --bus <i2c bus>  Override I2C bus from default of %d.\n", i2c_bus );
     exit( 1 );
 }
@@ -136,7 +176,9 @@ void parse( int argc, char *argv[] )
     {
         static const struct option lopts[] =
         {
-            { "ina3221",    0, 0, '3' },
+            { "battery",    0, 0, '1' },
+            { "solar",      0, 0, '2' },
+            { "system",     0, 0, '3' },
             { "address",    0, 0, 'a' },
             { "bus",        0, 0, 'b' },
             { "current",    0, 0, 'c' },
@@ -148,16 +190,28 @@ void parse( int argc, char *argv[] )
         };
         int c;
 
-        c = getopt_long( argc, argv, "3a:b:chi:vw", lopts, NULL );
+        c = getopt_long( argc, argv, "123a:b:chi:vw", lopts, NULL );
 
         if( c == -1 )
             break;
 
         switch( c )
         {
+            case '1':
+            {
+                channel = 0;
+                break;
+            }
+
+            case '2':
+            {
+                channel = 1;
+                break;
+            }
+
             case '3':
             {
-                device = DEVICE_INA3221;
+                channel = 2;
                 break;
             }
             case 'a':
@@ -226,16 +280,16 @@ void parse( int argc, char *argv[] )
 }
 
 
-int get_voltage( int channel, float *mv )
+int get_voltage( int chan, float *mv )
 {
     short bus;
 
-    if ( register_read( BUS_REG + ( channel << 1 ), (unsigned short*)&bus ) != 0 )
+    if ( register_read( REG_BUS + ( chan << 1 ), (unsigned short*)&bus ) != 0 )
     {
         return -1;
     }
 
-    if ( device == DEVICE_INA219 )
+    if ( device == CHIP_INA219 )
     {
         *mv = ( float )( ( bus & 0xFFF8 ) >> 1 );
     } 
@@ -247,16 +301,16 @@ int get_voltage( int channel, float *mv )
 }
 
 
-int get_current( int channel, float *ma )
+int get_current( int chan, float *ma )
 {
     short shunt;
 
-    if ( register_read( SHUNT_REG + ( channel << 1 ), &shunt ) != 0 )
+    if ( register_read( REG_SHUNT + ( chan << 1 ), &shunt ) != 0 )
     {
         return -1;
     }
 
-    if ( device == DEVICE_INA219 )
+    if ( device == CHIP_INA219 )
     {
         *ma = (float)shunt / 10;
     }
@@ -268,87 +322,80 @@ int get_current( int channel, float *ma )
 }
 
 
-void show_current( void  )
+void show_current( int chan )
 {
-    int channels = 1;
     int i;
     float ma;
 
-    if ( device == DEVICE_INA3221 )
-        channels = 3;
-
-    for ( i = 0; i < channels; i++ )
+    if ( device == CHIP_INA219 )
     {
-        if ( get_current( i, &ma ) )
-        {
-            fprintf( stderr, "Error reading current\n" );
-            return;
-        }
-        
-        if ( whole_numbers )
-        {
-            printf( "%4.0f\n", ma );
-        }
-        else
-        {
-            printf( "%04.1f\n", ma );
-        }
+        chan = 0;
+    }
+    
+    if ( get_current( chan, &ma ) )
+    {
+        fprintf( stderr, "Error reading current\n" );
+        return;
+    }
+    
+    if ( whole_numbers )
+    {
+        printf( "%4.0f\n", ma );
+    }
+    else
+    {
+        printf( "%04.1f\n", ma );
     }
 }
 
 
-void show_voltage( void )
+void show_voltage( int chan )
 {
-    int channels = 1;
-    int i;
     float mv;
 
-    if ( device == DEVICE_INA3221 )
-        channels = 3;
-
-    for ( i = 0; i < channels; i++ )
+    if ( device == CHIP_INA219 )
     {
-        if ( get_voltage( i, &mv ) )
-        {
-            fprintf( stderr, "Error reading voltage\n" );
-            return;
-        }
-        printf( "%4.0f\n", mv );
+        chan = 0;
     }
+    
+    if ( get_voltage( chan, &mv ) )
+    {
+        fprintf( stderr, "Error reading voltage\n" );
+        return;
+    }
+    printf( "%4.0f\n", mv );
 }
 
 
-void show_voltage_current( void )
+void show_voltage_current( int chan )
 {
-    int channels = 1;
-    int i;
     float mv, ma;
 
-    if ( device == DEVICE_INA3221 )
-        channels = 3;
-    
-    for ( i = 0; i < channels; i++ )
+    if ( device == CHIP_INA219 )
     {
-        if ( get_current( i, &ma ) || get_voltage( i, &mv ) )
-        {
-            fprintf( stderr, "Error reading voltage/current\n" );
-            return;
-        }
+        chan = 0;
+    }
+    
+    if ( get_current( chan, &ma ) || get_voltage( chan, &mv ) )
+    {
+        fprintf( stderr, "Error reading voltage/current\n" );
+        return;
+    }
 
-        if ( whole_numbers )
-        {
-            printf( "%4.0fmV  %4.0fmA\n", mv, ma );
-        }
-        else
-        {
-            printf( "%4.0fmV  %4.1fmA\n", mv, ma );
-        }
+    if ( whole_numbers )
+    {
+        printf( "%4.0fmV  %4.0fmA", mv, ma );
+    }
+    else
+    {
+        printf( "%4.0fmV  %4.1fmA", mv, ma );
     }
 }
 
 
 void monitor( void )
 {
+    int i;
     struct tm *tmptr;
     time_t seconds;
 
@@ -357,7 +404,20 @@ void monitor( void )
         seconds = time( NULL );
         tmptr = localtime( &seconds );
         printf( "%2d:%02d:%02d ", tmptr->tm_hour, tmptr->tm_min, tmptr->tm_sec );
-        show_voltage_current();
+        if ( device == CHIP_INA219 )
+        {
+            show_voltage_current( 0 );
+            printf( "\n" );
+        }
+        else
+        {
+            for ( i = 0; i < 3; i++ )
+            {
+                printf( " | " );
+                show_voltage_current( i );
+            }
+            printf( "\n" );
+        }
         sleep( interval );
     }
 }
@@ -371,6 +431,7 @@ int main( int argc, char *argv[] )
 
     snprintf( filename, 19, "/dev/i2c-%d", i2c_bus );
     handle = open( filename, O_RDWR );
+    
     if ( handle < 0 ) 
     {
         fprintf( stderr, "Error opening bus %d: %s\n", i2c_bus, strerror( errno ) );
@@ -382,40 +443,50 @@ int main( int argc, char *argv[] )
         fprintf( stderr, "Error setting address %02X: %s\n", i2c_address, strerror( errno ) );
         exit( 1 );
     }
-
-    switch ( operation )
+    
+    device = chip_identify();
+    if ( device < 0 )
     {
-        case OP_DUMP:
+        fprintf( stderr, "Cannot identify power monitor device.\n" );
+        exit( 1 );
+    }
+    else
+    {
+        switch ( operation )
         {
-            show_voltage_current();
-            break;
-        }
+            case OP_DUMP:
+            {
+                show_voltage_current( channel );
+                printf( "\n" );
+                break;
+            }
 
-        case OP_VOLTAGE:
-        {
-            show_voltage();
-            break;
-        }
+            case OP_VOLTAGE:
+            {
+                show_voltage( channel );
+                break;
+            }
 
-        case OP_CURRENT:
-        {
-            show_current();
-            break;
-        }
+            case OP_CURRENT:
+            {
+                show_current( channel );
+                break;
+            }
 
-        case OP_MONITOR:
-        {
-            monitor();
-            break;
-        }
+            case OP_MONITOR:
+            {
+                monitor();
+                break;
+            }
 
-        default:
-        case OP_NONE:
-        {
-            break;
+            default:
+            case OP_NONE:
+            {
+                break;
+            }
         }
     }
-
+    
     close( handle );
     return 0;
 }

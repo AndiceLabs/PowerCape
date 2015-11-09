@@ -345,7 +345,7 @@ ISR( TIMER2_OVF_vect, ISR_BLOCK )
     
     // Handle RTC
     system_ticks++;
-#ifdef DEBUG
+#if 0
     PORTB ^= PIN_LED0;
 #endif
     seconds++;

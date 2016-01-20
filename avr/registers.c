@@ -171,12 +171,6 @@ void registers_host_write( uint8_t index, uint8_t data )
             return;
         }
         
-        case REG_EXTENDED:
-        {
-            // Don't let this register change
-            return;
-        }
-        
         case REG_I2C_ADDRESS:
         {
             // TODO: qualify address
@@ -199,6 +193,17 @@ void registers_host_write( uint8_t index, uint8_t data )
             board_set_charge_timer( data );
             eeprom_update_byte( EEPROM_CHG_TIMER, data );    // TODO: interrupt context
             break;
+        }
+
+        // Read-only registers
+        case REG_EXTENDED:
+        case REG_VERSION_MAJOR:
+        case REG_VERSION_MINOR:
+        case REG_BUILD_MONTH:
+        case REG_BUILD_DAY:
+        case REG_BUILD_YEAR:
+        {
+            return;
         }
         
         default:
@@ -225,6 +230,12 @@ void registers_init( void )
     registers[ REG_BOARD_TYPE ]      = eeprom_get_board_type();
     registers[ REG_BOARD_REV ]       = eeprom_get_revision_value();
     registers[ REG_BOARD_STEP ]      = eeprom_get_stepping_value();
+    
+    registers[ REG_VERSION_MAJOR ]   = VER_MAJ;
+    registers[ REG_VERSION_MINOR ]   = VER_MIN;
+    registers[ REG_BUILD_MONTH ]     = MONTH;
+    registers[ REG_BUILD_DAY ]       = DAY;
+    registers[ REG_BUILD_YEAR ]      = YEAR;
     
     t = eeprom_get_i2c_address();
     if ( t == 0xFF )

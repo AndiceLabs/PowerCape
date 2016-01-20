@@ -28,6 +28,12 @@ enum registers_type {
     REG_I2C_ICHARGE,            // 23   Charge current (0-3)/3 amp
     REG_I2C_TCHARGE,            // 24   Charger timer in hours (3-10)
     
+    REG_VERSION_MAJOR,          // 25   Firmware major version
+    REG_VERSION_MINOR,          // 26   Firmware minor version
+    REG_BUILD_MONTH,            // 27   Firmware build month
+    REG_BUILD_DAY,              // 28   Firmware build day
+    REG_BUILD_YEAR,             // 29   Firmware build year 
+    
     NUM_REGISTERS
 };
 
@@ -56,6 +62,7 @@ enum registers_type {
 #define CAPABILITY_ADDR         0x02    // Programmable I2C address
 #define CAPABILITY_CHARGE       0x03    // Programmable charge current and timer
 #define CAPABILITY_STATUS       0x04    // Current button and opto state in status register
+#define CAPABILITY_VERSION      0x05    // Version and build registers are available
 
 // Board types
 #define BOARD_TYPE_BONE         0x00

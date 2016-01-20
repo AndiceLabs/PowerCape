@@ -25,8 +25,8 @@ enum registers_type {
     REG_WDT_STOP,               // 20   Power-off countdown (single-shot seconds, 0 to disable)
     REG_WDT_START,              // 21   Start-up activity watchdog countdown (seconds, 0 to disable)
     REG_I2C_ADDRESS,            // 22   Slave address to use on I2C interface
-    REG_I2C_ICHARGE,            // 23   Charge current (0-3)/3 amp
-    REG_I2C_TCHARGE,            // 24   Charger timer in hours (3-10)
+    REG_I2C_ICHARGE,            // 23   Charge current (0-3)/3 amp (PowerPi only)
+    REG_I2C_TCHARGE,            // 24   Charger timer in hours (3-10) (PowerPi only)
     
     REG_VERSION_MAJOR,          // 25   Firmware major version
     REG_VERSION_MINOR,          // 26   Firmware minor version
@@ -47,6 +47,7 @@ enum registers_type {
 #define CONTROL_CE              0x01
 #define CONTROL_LED0            0x02
 #define CONTROL_LED1            0x04
+#define CONTROL_NO_CE_START     0x08    // Disable charge-enable prior to power-up
 #define CONTROL_BOOTLOAD        0x80
 
 // START enable and reason register bits
@@ -71,10 +72,10 @@ enum registers_type {
 
 #if defined( __AVR__ )
 void registers_init( void );
-inline void registers_set_mask( uint8_t index, uint8_t mask );
-inline void registers_clear_mask( uint8_t index, uint8_t mask );
-inline uint8_t registers_get( uint8_t index );
-inline void registers_set( uint8_t idx, uint8_t data );
+void registers_set_mask( uint8_t index, uint8_t mask );
+void registers_clear_mask( uint8_t index, uint8_t mask );
+uint8_t registers_get( uint8_t index );
+void registers_set( uint8_t idx, uint8_t data );
 uint8_t registers_host_read( uint8_t idx );
 void registers_host_write( uint8_t idx, uint8_t data );
 #endif

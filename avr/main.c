@@ -213,6 +213,12 @@ void state_machine( void )
             registers_set( REG_WDT_RESET, 0 );
             registers_set( REG_WDT_POWER, 0 );
             registers_set( REG_WDT_STOP, 0 );
+            
+            if ( registers_get( REG_CONTROL ) & CONTROL_NO_CE_START )
+            {
+                registers_clear_mask( REG_CONTROL, CONTROL_CE );
+                board_ce( 0 );
+            }
 
             board_hold_reset();
             board_power_on();

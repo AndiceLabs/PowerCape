@@ -18,6 +18,7 @@
 extern volatile uint16_t system_ticks;
 volatile uint8_t rebootflag = 0;
 volatile uint8_t activity_watchdog;
+uint8_t ce_countdown = 0;
 
 uint8_t mcusr __attribute__ ((section (".noinit")));
 
@@ -133,6 +134,19 @@ void watchdog_check( void )
 }
 
 
+void check_ce_reenable( void )
+{
+    if ( ce_countdown != 0 )
+    {
+        if ( --ce_countdown == 0 )
+        {
+            registers_set_mask( REG_CONTROL, CONTROL_CE );
+            board_ce( 1 );            
+        }
+    }
+}
+
+
 void state_machine( void )
 {
     switch( power_state )
@@ -155,6 +169,7 @@ void state_machine( void )
         case STATE_CLEAR_MASK:
         {
             board_enable_interrupt( registers_get( REG_START_ENABLE ) );
+            ce_countdown = registers_get( REG_RESTART_CE_SECONDS );
             board_begin_countdown();
             
             if ( board_pgood() )
@@ -173,6 +188,8 @@ void state_machine( void )
         
         case STATE_OFF_NO_PGOOD:
         {
+            check_ce_reenable();
+            
             if ( board_pgood() )
             {
                 power_state = STATE_OFF_WITH_PGOOD;
@@ -191,6 +208,8 @@ void state_machine( void )
         
         case STATE_OFF_WITH_PGOOD:
         {
+            check_ce_reenable();
+
             if ( !board_pgood() )
             {
                 power_state = STATE_OFF_NO_PGOOD;

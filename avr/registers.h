@@ -34,6 +34,8 @@ enum registers_type {
     REG_BUILD_DAY,              // 28   Firmware build day
     REG_BUILD_YEAR,             // 29   Firmware build year 
     
+    REG_RESTART_CE_SECONDS,     // 30   Delay for CE restart after power-off
+    
     NUM_REGISTERS
 };
 

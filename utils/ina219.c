@@ -135,6 +135,15 @@ chip_type chip_identify( void )
                 if ( reg == 0x3220 )
                 {
                     rc = CHIP_INA3221;
+                    if ( register_read( REG_CONFIG, &reg ) == 0 )
+                    {
+                        // Restore POR defaults if they're not as expected
+                        if ( reg != 0x7127 )
+                        {
+                            register_write( REG_CONFIG, 0x7127 );
+                            msleep( 50 );
+                        }
+                    }
                 }
             }
             else

@@ -31,7 +31,7 @@ typedef enum
 
 op_type operation = OP_NONE;
 
-int i2c_bus = 1;
+int i2c_bus = 2;
 int handle;
 
 

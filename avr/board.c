@@ -109,10 +109,16 @@ void board_ce( uint8_t enable )
         if ( enable )
         {
             DDRC &= ~PIN_CE;
+#ifdef DEBUG
+        board_led_on( 0 );
+#endif
         }
         else
         {
             DDRC |= PIN_CE;
+#ifdef DEBUG
+        board_led_off( 0 );
+#endif
         }
     }
 }
@@ -346,7 +352,7 @@ ISR( TIMER2_OVF_vect, ISR_BLOCK )
     // Handle RTC
     system_ticks++;
 #if 0
-    PORTB ^= PIN_LED0;
+    //PORTB ^= PIN_LED0;
 #endif
     seconds++;
     

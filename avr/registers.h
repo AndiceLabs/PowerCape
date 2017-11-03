@@ -25,8 +25,16 @@ enum registers_type {
     REG_WDT_STOP,               // 20   Power-off countdown (single-shot seconds, 0 to disable)
     REG_WDT_START,              // 21   Start-up activity watchdog countdown (seconds, 0 to disable)
     REG_I2C_ADDRESS,            // 22   Slave address to use on I2C interface
-    REG_I2C_ICHARGE,            // 23   Charge current (0-3)/3 amp
-    REG_I2C_TCHARGE,            // 24   Charger timer in hours (3-10)
+    REG_I2C_ICHARGE,            // 23   Charge current (0-3)/3 amp (PowerPi only)
+    REG_I2C_TCHARGE,            // 24   Charger timer in hours (3-10) (PowerPi only)
+    
+    REG_VERSION_MAJOR,          // 25   Firmware major version
+    REG_VERSION_MINOR,          // 26   Firmware minor version
+    REG_BUILD_MONTH,            // 27   Firmware build month
+    REG_BUILD_DAY,              // 28   Firmware build day
+    REG_BUILD_YEAR,             // 29   Firmware build year 
+    
+    REG_RESTART_CE_SECONDS,     // 30   Delay for CE restart after power-off
     
     NUM_REGISTERS
 };
@@ -41,6 +49,7 @@ enum registers_type {
 #define CONTROL_CE              0x01
 #define CONTROL_LED0            0x02
 #define CONTROL_LED1            0x04
+#define CONTROL_NO_CE_START     0x08    // Disable charge-enable prior to power-up
 #define CONTROL_BOOTLOAD        0x80
 
 // START enable and reason register bits
@@ -56,6 +65,7 @@ enum registers_type {
 #define CAPABILITY_ADDR         0x02    // Programmable I2C address
 #define CAPABILITY_CHARGE       0x03    // Programmable charge current and timer
 #define CAPABILITY_STATUS       0x04    // Current button and opto state in status register
+#define CAPABILITY_VERSION      0x05    // Version and build registers are available
 
 // Board types
 #define BOARD_TYPE_BONE         0x00

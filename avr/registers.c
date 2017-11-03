@@ -15,25 +15,25 @@ extern volatile uint8_t activity_watchdog;
 static uint8_t registers[ NUM_REGISTERS ];
 
 // Internal interface
-inline void registers_set_mask( uint8_t index, uint8_t mask )
+void registers_set_mask( uint8_t index, uint8_t mask )
 {
     registers[ index ] |= mask;
 }
 
 
-inline void registers_clear_mask( uint8_t index, uint8_t mask )
+void registers_clear_mask( uint8_t index, uint8_t mask )
 {
     registers[ index ] &= ~mask;
 }
 
 
-inline uint8_t registers_get( uint8_t index )
+uint8_t registers_get( uint8_t index )
 {
     return registers[ index ];
 }
 
 
-inline void registers_set( uint8_t index, uint8_t value )
+void registers_set( uint8_t index, uint8_t value )
 {
     registers[ index ] = value;
 }

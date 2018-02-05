@@ -173,8 +173,10 @@ void registers_host_write( uint8_t index, uint8_t data )
         
         case REG_I2C_ADDRESS:
         {
-            // TODO: qualify address
-            eeprom_update_byte( EEPROM_I2C_ADDR, data );    // TODO: interrupt context
+            if ( ( data >= 0x08 ) && ( data <= 0x77 ) )
+            {
+                eeprom_update_byte( EEPROM_I2C_ADDR, data );    // TODO: interrupt context
+            }
             break;
         }
 

@@ -80,7 +80,7 @@ void twi_slave_init( void )
     uint8_t i;
     
     i = registers_get( REG_I2C_ADDRESS );
-    if ( i & 0x80 )
+    if ( ( i < 0x08 ) || ( i > 0x77 ) )
     {
         i = TWI_SLAVE_ADDRESS;
     }

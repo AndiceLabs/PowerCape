@@ -75,7 +75,7 @@ void watchdog_reset( void )
     // Make sure there is no start reason
     registers_set( REG_START_REASON, 0 );
     board_hold_reset();
-    _delay_ms( 250 );
+    _delay_ms( 500 );
     board_release_reset();
 }
 
@@ -241,7 +241,7 @@ void state_machine( void )
 
             board_hold_reset();
             board_power_on();
-            _delay_ms( 250 );
+            _delay_ms( 500 );
             board_release_reset();
             power_state = STATE_CHECK_3V;
             break;

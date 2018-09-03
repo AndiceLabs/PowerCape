@@ -229,6 +229,7 @@ void state_machine( void )
         {
             retries--;
 
+            board_set_pwrbut( 0 );
             registers_set( REG_WDT_RESET, 0 );
             registers_set( REG_WDT_POWER, 0 );
             registers_set( REG_WDT_STOP, 0 );
@@ -361,6 +362,16 @@ int main( void )
             }
             
             check_charge_enable();
+        }
+        
+        if ( ( registers_get( REG_CONTROL ) & CONTROL_BUTTON_PWR_PASS ) && 
+             ( power_state == STATE_ON ) )
+        {
+            _delay_ms( 1 );
+            if ( board_get_button() != board_get_pwrbut() )
+            {
+                board_set_pwrbut( board_get_button() );
+            }
         }
         
         // Bootloader entry

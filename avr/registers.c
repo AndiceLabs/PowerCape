@@ -222,7 +222,7 @@ void registers_init( void )
 {
     uint8_t t;
     
-    registers[ REG_CONTROL ]         = CONTROL_CE;
+    registers[ REG_CONTROL ]         = CONTROL_CE | CONTROL_BUTTON_PWR_PASS;
     registers[ REG_START_ENABLE ]    = START_ALL;
     registers[ REG_RESTART_HOURS ]   = 0;
     registers[ REG_RESTART_MINUTES ] = 0;

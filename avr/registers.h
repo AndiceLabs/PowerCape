@@ -50,6 +50,7 @@ enum registers_type {
 #define CONTROL_LED0            0x02
 #define CONTROL_LED1            0x04
 #define CONTROL_NO_CE_START     0x08    // Disable charge-enable prior to power-up
+#define CONTROL_BUTTON_PWR_PASS 0x10    // In the on state, pass button press to BB PWR_BUT
 #define CONTROL_BOOTLOAD        0x80
 
 // START enable and reason register bits
@@ -66,6 +67,7 @@ enum registers_type {
 #define CAPABILITY_CHARGE       0x03    // Programmable charge current and timer
 #define CAPABILITY_STATUS       0x04    // Current button and opto state in status register
 #define CAPABILITY_VERSION      0x05    // Version and build registers are available
+#define CAPABILITY_PWRBUT       0x06    // PWRBUT pass-thru is available
 
 // Board types
 #define BOARD_TYPE_BONE         0x00

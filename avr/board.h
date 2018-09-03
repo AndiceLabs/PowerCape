@@ -24,7 +24,7 @@
 #define PIN_BB_SDA      ( 1 << PD1 )        // PCINT17
 #define PIN_ENABLE      ( 1 << PD2 )        // PCINT18
 #define PIN_DETECT      ( 1 << PD3 )        // PCINT19
-#define PIN_PD4         ( 1 << PD4 )        // PCINT20
+#define PIN_PWRBUT      ( 1 << PD4 )        // PCINT20
 #define PIN_BUTTON      ( 1 << PD5 )        // PCINT21
 #define PIN_CP          ( 1 << PD6 )        // PCINT22
 #define PIN_D           ( 1 << PD7 )        // PCINT23
@@ -57,6 +57,9 @@ void board_power_off( void );
 
 void board_led_on( uint8_t led );
 void board_led_off( uint8_t led );
+int board_get_button( void );
+int board_get_pwrbut( void );
+void board_set_pwrbut( int enable );
 
 void board_ce( uint8_t enable );
 

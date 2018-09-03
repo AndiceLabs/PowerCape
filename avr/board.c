@@ -58,6 +58,44 @@ void board_power_off( void )
 }
 
 
+int board_get_button( void )
+{
+    int rc = 0;
+    
+    if ( ( PIND & PIN_BUTTON ) == 0 )
+    {
+        rc = 1;  // button pressed
+    }
+    return rc;
+}
+
+
+int board_get_pwrbut( void )
+{
+    int rc = 0;
+    
+    if ( DDRD & PIN_PWRBUT )
+    {
+        rc = 1; // we're driving PWR_BUT
+    }
+    return rc;
+}
+
+
+void board_set_pwrbut( int enable )
+{
+    if ( enable )
+    {
+        PORTD &= ~PIN_PWRBUT;
+        DDRD |= PIN_PWRBUT;
+    }
+    else
+    {
+        DDRD &= ~PIN_PWRBUT;
+    }
+}
+
+
 void board_led_on( uint8_t led )
 {
     if ( led == 0 )

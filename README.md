@@ -1,3 +1,5 @@
+![PowerCape call out](https://andicelabs.com/wp-content/uploads/2014/08/PowerCapeFeatureCallout.png)
+
 The PowerCape is a power supply cape for the BeagleBone that combines a TI
 buck/boost regulator with a Li-Ion/Li-Poly charging circuit.  It converts a 3V
 to 14V DC source or 3.7V battery source into 5V for the BeagleBone.  It also
